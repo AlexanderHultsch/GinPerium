@@ -45,8 +45,10 @@ db/
   schema.sql                Datenmodell (users, sessions, gins, ratings)
   index.js                   DB öffnen + Schema-Migration (node:sqlite)
   repository.js              SQL-Zugriff hinter injizierbarer Schnittstelle
+  seedData.js                 Ursprünglicher Gin-Katalog (19 Gins) + Auto-Seed
 scripts/
   seedAdmin.js                Admin anlegen/befördern (npm run seed:admin)
+  seedGins.js                  Katalog aus seedData.js nachträglich einspielen (npm run seed:gins)
 public/
   index.html                  Gin-Katalog mit Filter und Bewertung
   admin.html                  Verwaltung (Gins + Nutzer:innen)
@@ -65,9 +67,37 @@ public/
 test/
   password.test.js            Passwort-Hashing
   domain.test.js               Reine Validierungslogik
+  seedData.test.js              Katalog-Daten (Namen eindeutig, Bilder vorhanden, gültig)
   api.test.js                  Ende-zu-Ende über echten HTTP-Server (:memory:)
   helpers/testServer.js         Test-Harness (Server + Cookie-Handling)
 ```
+
+## Gin-Katalog / Seed-Daten
+
+`db/seedData.js` enthält den ursprünglichen Gin-Katalog (19 Gins,
+rekonstruiert aus einem Backup der alten Seite) fest im Repo. Beim ersten
+Start wird eine **leere** `gins`-Tabelle automatisch damit befüllt
+(`seedGinsIfEmpty` in `server.js`) – dadurch bringt jedes frische Docker-
+Volume auf dem Pi den kompletten Katalog gleich mit, ohne dass man ihn
+manuell über `/admin.html` neu eintippen muss. Spätere Änderungen über
+die Admin-Oberfläche werden dabei nie überschrieben, da nur bei komplett
+leerer Tabelle geseedet wird.
+
+Zum nachträglichen (erneuten) Einspielen einzelner fehlender Katalog-
+Einträge, ohne bereits vorhandene/bearbeitete Gins anzufassen:
+
+```bash
+npm run seed:gins
+# bzw. im Container:
+docker compose exec ginperium node scripts/seedGins.js
+```
+
+Es wird bewusst **keine** fertig befüllte `.sqlite`-Datei ins Repo
+committet – die Live-Datenbank enthält auch Nutzer:innen, Sessions und
+Bewertungen und würde bei jeder Nutzung des Pi Merge-Konflikte mit dem
+Repo erzeugen. Stattdessen liegen die Katalog-Daten als lesbarer,
+diffbarer JS-Datensatz im Repo und werden beim Start automatisch in die
+(dann tatsächlich auf dem Pi liegende) Datenbank geschrieben.
 
 ## Setup (lokal, ohne Docker)
 
@@ -76,11 +106,12 @@ npm install
 DB_PATH=./ginperium.sqlite npm start
 ```
 
-Die Seite ist danach unter `http://localhost:3000` erreichbar. Der erste
-registrierte Account wird automatisch zum Admin und kann unter
-`/admin.html` Gins anlegen. Bilddateien werden dabei aus
-`public/images/` referenziert (Pfad relativ dazu angeben, z. B.
-`gins/meinneuergin.jpg` – die Datei muss dort tatsächlich liegen).
+Die Seite ist danach unter `http://localhost:3000` erreichbar und der
+Gin-Katalog automatisch befüllt (siehe oben). Der erste registrierte
+Account wird automatisch zum Admin und kann unter `/admin.html` weitere
+Gins anlegen. Bilddateien werden dabei aus `public/images/` referenziert
+(Pfad relativ dazu angeben, z. B. `gins/meinneuergin.jpg` – die Datei
+muss dort tatsächlich liegen).
 
 ## Setup mit Docker (empfohlen für den Raspberry Pi)
 
