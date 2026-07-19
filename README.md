@@ -130,15 +130,18 @@ Diese Version ersetzt die vorherige PHP/MySQL-Umsetzung vollständig:
 Die alten PHP-Dateien und Bilder wurden aus dem Projekt entfernt; die
 Flaschenfotos liegen jetzt unter `public/images/gins/`.
 
+## Datenschutz
+
+`public/datenschutz.html` verweist auf die allgemeine Datenschutzerklärung
+der Landing-Page unter <https://ahultsch.com/privacy.html>; es gibt keine
+separate Erklärung mehr für Ginperium selbst.
+
 ## Bekannte offene Punkte
 
-- Es gibt noch keinen Bild-Upload über die Admin-Oberfläche – neue
-  Flaschenfotos müssen manuell auf den Pi (bzw. in das Docker-Volume/
-  Repo unter `public/images/gins/`) kopiert werden, bevor man den
-  Dateinamen im Formular einträgt.
-- Die Platzhaltertexte in der Datenschutzerklärung (Firmenname, Adresse,
-  E-Mail) stammen aus einer alten Mustervorlage und sollten vor dem
-  Live-Gang geprüft und vervollständigt werden.
+- Es gibt keinen Bild-Upload über die Admin-Oberfläche – neue
+  Flaschenfotos werden manuell auf den Pi (bzw. in das Docker-Volume/
+  Repo unter `public/images/gins/`) kopiert, bevor man den Dateinamen im
+  Formular einträgt. Das ist so gewollt und kein offener Punkt mehr.
 - `node:sqlite` ist in Node.js noch als experimentell markiert; das ist
   für ein privates Hobbyprojekt unkritisch, sollte aber im Hinterkopf
   bleiben.
