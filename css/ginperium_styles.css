@@ -1,0 +1,385 @@
+@charset "utf-8";
+
+/*Style Allgemeines-----------------------------------------------------*/
+
+* {
+    box-sizing: border-box;
+}
+
+main {
+    max-width: 828px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.GinContainer {
+    display: flex;
+    margin-top: 20px;
+    padding: 20px;
+    border: 2px groove grey;
+}
+
+#TitlePic {
+    width: 200px;
+}
+
+
+/*Class-------------------------------------*/
+
+#MainHead {
+    color: white;
+    font-size: 35px;
+    font-family: "Verdana";
+    text-align: center;
+    margin: 5px;
+    text-shadow: 2px 2px #313131;
+
+}
+
+.SearchBar {
+    color: white;
+    font-size: 17px;
+    font-family: "Arial";
+
+    background-image: url("../Bilder/Wallpaper.jpg");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+    border-radius: 11px;
+    max-height: 180px;
+
+}
+
+
+/* Common button styles */
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+  }
+
+/* Filter button styles */
+.filter-button {
+    background-color: #313131;
+    color: white;
+    border: none;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 25px;
+    transition-duration: 0.4s;
+  }
+  
+  .filter-button:hover {
+    background-color: #1b1b1b;
+    color: white;
+  }
+  
+  /* Logout button styles */
+  .logout-button {
+    background-color: #313131;
+    color: white;
+    border: none;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 25px;
+    transition-duration: 0.4s;
+  }
+  
+  .logout-button:hover {
+    background-color: #1b1b1b;
+    color: white;
+  }
+  
+  
+
+
+/* Drop down */
+select {
+    color: #313131;
+    font-size: 15px;
+    font-family: "Arial";
+    width: 150px;
+    opacity: 0.9;
+}
+
+label {
+    margin-left: 5px;
+    display: inline-block;
+    width: 150px;
+    background-color: white;
+    color: #313131;
+    opacity: 0.9;
+}
+
+
+
+/*Left-------------------------------------*/
+.LeftColumn {
+    display: flex;
+    flex-direction: column;
+    flex: 250px;
+    text-align: center;
+    align-items: center;
+    margin-right: 15px;
+}
+
+.BottlePic {
+    margin-top: 50px;
+    width: 100px;
+}
+
+.Region,
+.Taste,
+.Alc,
+.Cost {
+    font-size: 15px;
+    margin: 2px;
+    width: 100%;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #313131;
+}
+
+
+.Region {
+    margin-top: 20px;
+}
+
+.Taste {
+    margin-left: 2px;
+    border-width: 1px;
+}
+
+.Alc {
+    padding-top: 10px;
+}
+
+.Cost {
+    padding-top: 10px;
+}
+
+
+
+/*Right-------------------------------------*/
+.RightColumn {
+    flex: 550px;
+    margin-right: 15px;
+}
+
+.GinName {
+    font-family: 'Verdana';
+    font-size: 25px;
+    text-align: center;
+}
+
+.Category {
+    font-size: 17px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.Botanicals {
+    font-size: 15px;
+    text-align: center;
+    margin-top: 2px;
+    margin-bottom: 20px;
+    font-style: italic;
+}
+
+
+.Story {
+    font-family: "Arial";
+    font-size: 15px;
+    hyphens: auto;
+    text-align: justify;
+    margin-bottom: 20px;
+}
+
+.PS_pic {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    width: 130px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+
+}
+
+.Perfect_Serve {
+    margin-top: 2px;
+    text-align: center;
+}
+
+
+/*Footer-------------------------------------*/
+
+footer {
+    max-width: 828px;
+    margin: 0 auto;
+    background-color: #313131;
+    color: #ffffff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    font-family: 'Arial';
+}
+
+footer a {
+    color: #ffffff;
+    text-decoration: none;
+    margin-left: 15px;
+}
+
+
+/*Cookie-------------------------------------*/
+
+.cookie-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #f5f5f5;
+    border-top: 1px solid #ccc;
+    padding: 1rem;
+    text-align: center;
+    z-index: 1000;
+    display: none;
+}
+
+.cookie-banner-content p {
+    display: inline-block;
+    margin: 0 1rem 0 0;
+}
+
+.cookie-banner-button {
+    background-color: #007bff;
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.cookie-banner-button:hover {
+    background-color: #0069d9;
+}
+
+
+
+/* Sterne */
+
+.stars {
+    display: flex;
+    margin-bottom: 0px;
+  }
+
+.rating-count {
+    display: flex;
+    margin-top: 0px;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 14px;
+}
+
+
+.average-rating {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+
+
+
+.star-rating {
+    display: inline-block;
+    font-size: 1.5em;
+  }
+  
+  .star-rating input[type="radio"] {
+    display: none;
+  }
+  
+  .star-rating label {
+    color: #ccc;
+    cursor: pointer;
+  }
+  
+  .star-rating label:before {
+    content: "★";
+    display: inline-block;
+  }
+  
+  .star-rating input[type="radio"]:checked ~ label {
+    color: #f3b33d;
+  }
+  
+  .star-rating input[type="radio"]:checked ~ label ~ label {
+    color: #ccc;
+  }
+
+
+
+.button-rating {
+    background-color: #313131;
+    border: 2px solid #313131;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 15px;
+    margin: 4px 2px;
+    cursor: pointer;
+    padding: 8px 18px;
+    border-radius: 4px;
+    transition-duration: 0.4s;
+  }
+  
+.button-rating:hover {
+    background-color: white;
+    color: #4CAF50;
+    border: 2px solid #4CAF50;
+  }
+
+
+/*Funktions-------------------------------------*/
+.hidden {
+    display: none;
+}
+
+
+/*Tablet or PC-------------------------------------*/
+@media all and (min-width: 700px) {
+
+
+    main {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .Botanicals {
+        margin-top: 30px;
+    }
+
+    .Story {
+        margin-top: 50px;
+        margin-bottom: 70px;
+    }
+
+}
