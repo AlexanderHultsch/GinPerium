@@ -1,0 +1,18 @@
+# Abhängigkeiten
+node_modules/
+
+# Lokale SQLite-Datenbank (im Container liegt sie im /data-Volume)
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Umgebungsvariablen mit Geheimnissen
+.env
+
+# Betriebssystem- und Editor-Dateien
+.DS_Store
+Thumbs.db
+*.swp
+
+# Logs
+*.log

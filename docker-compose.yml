@@ -1,0 +1,16 @@
+services:
+  ginperium:
+    build: .
+    image: ginperium:latest
+    container_name: ginperium
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DB_PATH=/data/ginperium.sqlite
+    volumes:
+      - ginperium_data:/data
+
+volumes:
+  ginperium_data:
