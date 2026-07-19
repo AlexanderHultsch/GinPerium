@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registrierung | Ginperium</title>
+  <link rel="icon" type="image/png" href="images/GinPerium.png">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="auth-page">
+
+  <div id="cookie-banner" class="cookie-banner">
+    <div class="cookie-banner-content">
+      <p>Hey, ich nutze Cookies! 🍪 <br>
+        Um dir auf meiner Website ein optimales Erlebnis zu bieten, setze ich Cookies ein.
+        Durch das Surfen auf meiner Seite stimmst du der Verwendung von Cookies gemäß unserer Cookie-Richtlinie zu.🌐✅</p>
+      <button id="accept-cookies" class="cookie-banner-button">Akzeptieren</button>
+      <button id="decline-cookies" class="cookie-banner-button">Ablehnen</button>
+    </div>
+  </div>
+
+  <div class="auth-card">
+    <h1>Registrierung</h1>
+    <p id="form-message" class="form-message"></p>
+    <form id="register-form">
+      <div class="field">
+        <label for="username">Benutzername</label>
+        <input type="text" id="username" name="username" required autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="password">Passwort</label>
+        <input type="password" id="password" name="password" required minlength="8" autocomplete="new-password">
+      </div>
+      <button type="submit" class="button-primary">Registrieren</button>
+    </form>
+    <p>Bereits registriert? <a href="login.html">Anmelden</a></p>
+  </div>
+
+  <footer>
+    <p>&copy; Alexander Hultsch</p>
+    <a href="datenschutz.html">Datenschutzerklärung</a>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/cookieBanner.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

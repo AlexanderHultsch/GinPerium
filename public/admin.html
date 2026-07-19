@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verwaltung | Ginperium</title>
+  <link rel="icon" type="image/png" href="images/GinPerium.png">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="catalog-page">
+
+  <div class="page-shell">
+    <div class="search-bar">
+      <h1>Ginperium – Verwaltung</h1>
+      <div class="button-group">
+        <a href="index.html" class="nav-button">Zur Übersicht</a>
+        <button id="logout-button" type="button" class="logout-button">Abmelden</button>
+      </div>
+    </div>
+
+    <section class="admin-section">
+      <h2 id="gin-form-title">Neuen Gin anlegen</h2>
+      <p id="gin-form-message" class="form-message"></p>
+      <form id="gin-form" class="admin-form">
+        <div class="field">
+          <label for="field-name">Name</label>
+          <input type="text" id="field-name" name="name" required>
+        </div>
+        <div class="field">
+          <label for="field-image">Bilddatei (relativ zu /images/, z.B. gins/Bombay.jpg)</label>
+          <input type="text" id="field-image" name="image" required>
+        </div>
+        <div class="field">
+          <label for="field-region">Region</label>
+          <input type="text" id="field-region" name="region" required>
+        </div>
+        <div class="field">
+          <label for="field-taste">Geschmack</label>
+          <input type="text" id="field-taste" name="taste" required>
+        </div>
+        <div class="field">
+          <label for="field-alcohol">Alkoholgehalt</label>
+          <input type="text" id="field-alcohol" name="alcohol" required>
+        </div>
+        <div class="field">
+          <label for="field-cost">Preis</label>
+          <input type="text" id="field-cost" name="cost" required>
+        </div>
+        <div class="field">
+          <label for="field-category">Kategorie</label>
+          <input type="text" id="field-category" name="category" required>
+        </div>
+        <div class="field">
+          <label for="field-botanicals">Botanicals (kommagetrennt)</label>
+          <input type="text" id="field-botanicals" name="botanicals" required>
+        </div>
+        <div class="field field-wide">
+          <label for="field-story">Geschichte</label>
+          <textarea id="field-story" name="story" rows="3" required></textarea>
+        </div>
+        <div class="field field-wide">
+          <label for="field-perfectServe">Perfect Serve</label>
+          <textarea id="field-perfectServe" name="perfectServe" rows="2" required></textarea>
+        </div>
+        <div class="field-wide">
+          <button type="submit" id="gin-form-submit" class="button-primary">Gin anlegen</button>
+          <button type="button" id="gin-form-cancel" class="nav-button hidden">Abbrechen</button>
+        </div>
+      </form>
+
+      <table class="admin-table">
+        <thead>
+          <tr><th>Name</th><th>Region</th><th>Bewertungen</th><th>Aktionen</th></tr>
+        </thead>
+        <tbody id="gin-table-body"></tbody>
+      </table>
+    </section>
+
+    <section class="admin-section">
+      <h2>Nutzer:innen</h2>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Benutzername</th><th>Admin</th><th>Aktionen</th></tr>
+        </thead>
+        <tbody id="user-table-body"></tbody>
+      </table>
+    </section>
+
+    <footer>
+      <p>&copy; Alexander Hultsch</p>
+      <a href="datenschutz.html">Datenschutzerklärung</a>
+    </footer>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

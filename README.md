@@ -3,94 +3,145 @@
 Eine kleine private Web-App zum Entdecken, Filtern und Bewerten von Gins.
 Nutzer:innen melden sich an, sehen eine Übersicht aller Gins mit Region,
 Geschmack, Botanicals und Perfect Serve, filtern die Liste und geben eine
-Sternebewertung ab.
+Sternebewertung ab. Die erste registrierte Person wird automatisch zur
+Admin und kann über eine eigene Oberfläche Gins anlegen, bearbeiten und
+löschen sowie Nutzer:innen verwalten.
+
+Für den Betrieb auf einem Raspberry Pi wurde die Seite vollständig von
+PHP/MySQL auf **Node.js + SQLite** umgestellt: kein separater
+Datenbankserver, ein einzelner Docker-Container, eine Datei als
+Datenbank.
 
 ## Tech-Stack
 
-- PHP (mysqli, prepared statements)
-- MySQL/MariaDB
-- Vanilla JavaScript, kein Framework
-- Reines CSS
+- Node.js (>= 22.5) mit Express
+- SQLite über das eingebaute `node:sqlite`-Modul (kein npm-DB-Treiber nötig)
+- Vanilla JavaScript im Frontend, kein Build-Schritt
+- Docker / Docker Compose für das Deployment
 
 ## Projektstruktur
 
 ```
-index.php              Einstiegspunkt, leitet je nach Login-Status weiter
-php/
-  session.php           Sichere Session-Konfiguration (HttpOnly, SameSite)
-  db.php                Zentrale Datenbankverbindung
-  csrf.php              CSRF-Token für Formulare
-  login.php             Anmeldung
-  register.php          Registrierung
-  logout.php            Abmeldung
-  ginperium.php          Gin-Übersicht, Filter, Bewertungen
-  datenschutz.php        Datenschutzerklärung
-  config.example.php     Vorlage für die Datenbank-Zugangsdaten
-css/                    Stylesheets je Seite
-js/                     Filter-, Bewertungs- und Cookie-Banner-Logik
-Pictures/               Bilder (Flaschen, Hintergründe, Icons)
+server.js              Einstiegspunkt: DB öffnen, App erzeugen, lauschen
+app.js                  Express-App-Factory (Static, Router, Fehler-Umschlag)
+Dockerfile              Container-Build (node:24-alpine, npm ci --omit=dev)
+docker-entrypoint.sh    chown /data an node, dann Rechte über su-exec abgeben
+docker-compose.yml      Ein Service, ein benanntes Volume für die DB-Datei
+routes/
+  auth.js               Register/Login/Logout/me
+  gins.js                Gin-Liste (inkl. Bewertungen) + Bewertung abgeben
+  admin.js                Gin-CRUD und Nutzerverwaltung (nur für Admins)
+middleware/
+  auth.js                 attachUser / requireAuth / requireAdmin
+  errorEnvelope.js         Einheitlicher JSON-Fehler-Umschlag
+  rateLimit.js             In-Memory Rate-Limiter für Login/Registrierung
+lib/
+  domain.js                Reine Validierungsfunktionen (Bewertung, Gin-Payload)
+  password.js               scrypt-Hashing (node:crypto)
+  sessions.js                Session-Cookie erzeugen/prüfen/löschen
+  cookies.js                 Kleine Cookie-Parse/Serialize-Helfer
+  ids.js / time.js           UUIDs / ISO-Zeit
+db/
+  schema.sql                Datenmodell (users, sessions, gins, ratings)
+  index.js                   DB öffnen + Schema-Migration (node:sqlite)
+  repository.js              SQL-Zugriff hinter injizierbarer Schnittstelle
+scripts/
+  seedAdmin.js                Admin anlegen/befördern (npm run seed:admin)
+public/
+  index.html                  Gin-Katalog mit Filter und Bewertung
+  admin.html                  Verwaltung (Gins + Nutzer:innen)
+  login.html / register.html
+  datenschutz.html            Datenschutzerklärung
+  css/styles.css
+  js/
+    api.js                    fetch-Wrapper inkl. Session-Cookie
+    app.js                    Katalogseite: laden, filtern, bewerten
+    admin.js                  Verwaltungsseite
+    auth.js                   Login-/Registrierungsformulare
+    cookieBanner.js            Cookie-Hinweis inkl. Persistenz
+  images/
+    gins/                      Flaschenfotos
+    ui/                        Hintergründe, Icons
+test/
+  password.test.js            Passwort-Hashing
+  domain.test.js               Reine Validierungslogik
+  api.test.js                  Ende-zu-Ende über echten HTTP-Server (:memory:)
+  helpers/testServer.js         Test-Harness (Server + Cookie-Handling)
 ```
 
-## Setup
+## Setup (lokal, ohne Docker)
 
-1. `php/config.example.php` nach `php/config.php` kopieren und die echten
-   Datenbank-Zugangsdaten eintragen. `config.php` wird über `.gitignore`
-   ignoriert und darf niemals eingecheckt werden.
-2. Datenbank mit mindestens folgenden Tabellen anlegen:
-   - `users (id, username, password)` – `password` enthält einen
-     `password_hash()`-Wert; `username` sollte eine `UNIQUE`-Spalte sein.
-   - `gins (name, image, region, taste, alcohol, cost, category,
-     botanicals, story, perfect_serve, …)`
-   - `ratings (gin_name, user_id, rating)`
-3. Mit PHP ≥ 8.1 und der `mysqli`-Extension auf einem Webserver
-   ausliefern (Dokumentenwurzel = Projektwurzel).
+```bash
+npm install
+DB_PATH=./ginperium.sqlite npm start
+```
 
-## Was bei der Überarbeitung geändert wurde
+Die Seite ist danach unter `http://localhost:3000` erreichbar. Der erste
+registrierte Account wird automatisch zum Admin und kann unter
+`/admin.html` Gins anlegen. Bilddateien werden dabei aus
+`public/images/` referenziert (Pfad relativ dazu angeben, z. B.
+`gins/meinneuergin.jpg` – die Datei muss dort tatsächlich liegen).
 
-- **Sicherheit**: Datenbank-Zugangsdaten waren im Klartext in drei
-  PHP-Dateien eincheckt. Sie wurden in eine nicht versionierte
-  `php/config.php` ausgelagert (`.gitignore` + `config.example.php`).
-  **Wichtig:** Da die Zugangsdaten bereits in der bisherigen Git-Historie
-  dieses Repos stehen, sollte das Datenbank-Passwort bei Strato
-  vorsorglich geändert werden.
-- Alle Datenbankabfragen nutzen weiterhin Prepared Statements; Ausgaben
-  von Datenbankwerten in HTML werden jetzt konsequent mit
-  `htmlspecialchars()` escaped (XSS-Schutz).
-- CSRF-Schutz für Login-, Registrierungs- und Bewertungsformular ergänzt.
-- Sessions werden mit `HttpOnly`, `SameSite=Lax` und (bei HTTPS) `Secure`
-  konfiguriert; nach dem Login wird die Session-ID neu generiert.
-- Login prüfte bislang nicht, ob der Benutzername überhaupt existiert;
-  Registrierung ließ doppelte Benutzernamen zu und akzeptierte beliebig
-  kurze Passwörter. Beides wird jetzt serverseitig validiert.
-- **Der Filter-Button war nicht mit JavaScript verknüpft** und hat daher
-  gar nichts getan – behoben.
-- Bild-/Hintergrundpfade zeigten auf einen nicht existierenden Ordner
-  `Bilder`; korrigiert auf den tatsächlichen Ordner `Pictures`.
-- Für jeden Gin wurden pro Seitenaufruf zwei zusätzliche Datenbankabfragen
-  für die Bewertung ausgeführt (N+1-Problem), obwohl die Bewertungen
-  bereits einmalig geladen wurden. Die Seite nutzt jetzt ausschließlich
-  die einmalig geladenen Daten.
-- Die Botanicals-Filterliste wurde durch zwei unterschiedliche,
-  widersprüchliche Code-Pfade befüllt (Split an Komma vs. an Leerzeichen).
-  Der doppelte, fehlerhafte Pfad wurde entfernt.
-- Der Cookie-Banner wurde nie eingeblendet (CSS stand permanent auf
-  „display: none“, nichts hat das je geändert) und die Wahl der
-  Nutzer:innen wurde nirgends gespeichert. Der Banner erscheint jetzt
-  beim ersten Besuch und merkt sich Zustimmung/Ablehnung im Browser.
-- Doppelte Datenbank-Verbindungs- und HTML-Boilerplate aus
-  `login.php`, `register.php` und `ginperium.php` in gemeinsame
-  Hilfsdateien (`db.php`, `session.php`, `csrf.php`) verschoben.
-- `datenschutz.php` bestand aus rund 200 einzelnen `echo`-Anweisungen;
-  in normales HTML umgewandelt (gleicher Inhalt, u. a. zwei Stellen mit
-  fehlendem Leerzeichen durch aneinandergereihte `echo`s korrigiert).
-- Ungültige HTML-Verschachtelung (`<body>` mitten in `<main>`,
-  Inhalte vor dem öffnenden `<body>`-Tag) bereinigt.
+## Setup mit Docker (empfohlen für den Raspberry Pi)
+
+```bash
+docker compose up -d --build
+```
+
+- Die SQLite-Datei liegt im benannten Volume `ginperium_data` unter
+  `/data/ginperium.sqlite` und übersteht damit Container-Updates.
+- Die Seite läuft auf Port 3000 (in `docker-compose.yml` anpassbar).
+- Admin-Nutzer nachträglich anlegen/befördern:
+  ```bash
+  docker compose exec ginperium node scripts/seedAdmin.js <benutzername> <passwort>
+  ```
+
+## Tests
+
+```bash
+npm test
+```
+
+Läuft mit dem eingebauten Node-Testrunner (`node --test`), inklusive
+eines Ende-zu-Ende-Tests, der einen echten HTTP-Server gegen eine
+In-Memory-SQLite-Datenbank startet.
+
+## Umzug von der alten PHP/MySQL-Version
+
+Diese Version ersetzt die vorherige PHP/MySQL-Umsetzung vollständig:
+
+- **Datenbank**: MySQL (Strato) → SQLite-Datei im Docker-Volume. Bewertungen
+  hängen jetzt an einer echten Gin-ID (Fremdschlüssel) statt am Gin-Namen
+  als Text, und pro Nutzer:in ist genau eine Bewertung je Gin möglich
+  (`UNIQUE(gin_id, user_id)` mit Upsert) statt beliebig vieler Duplikate.
+- **Backend**: PHP-Skripte pro Seite → Express mit sauber getrennten
+  Routen/Middleware/DB-Schichten.
+- **Frontend**: serverseitig gerenderte PHP-Seiten → statisches HTML +
+  JavaScript, das die JSON-API per `fetch` anspricht (keine Formular-
+  Neuladung mehr beim Bewerten).
+- **Gin-Verwaltung**: Es gibt jetzt eine echte Oberfläche (`/admin.html`),
+  um Gins anzulegen/zu bearbeiten/zu löschen. Vorher ging das nur direkt
+  in der Datenbank (z. B. über phpMyAdmin bei Strato) – auf einem
+  Raspberry-Pi-Setup ohne solches Tool war das keine Option mehr.
+- **Auth**: Passwort-Hashing weiterhin mit einem starken KDF (jetzt
+  scrypt über `node:crypto` statt PHPs `password_hash`), Sessions über
+  einen eigenen, in der DB gespeicherten Token statt PHP-Sessions.
+
+Die alten PHP-Dateien und Bilder wurden aus dem Projekt entfernt; die
+Flaschenfotos liegen jetzt unter `public/images/gins/`.
 
 ## Bekannte offene Punkte
 
+- Es gibt noch keinen Bild-Upload über die Admin-Oberfläche – neue
+  Flaschenfotos müssen manuell auf den Pi (bzw. in das Docker-Volume/
+  Repo unter `public/images/gins/`) kopiert werden, bevor man den
+  Dateinamen im Formular einträgt.
 - Die Platzhaltertexte in der Datenschutzerklärung (Firmenname, Adresse,
-  E-Mail) stammen aus einer Mustervorlage und sollten vor dem Live-Gang
-  geprüft und vervollständigt werden.
-- Für `users.username` wird ein `UNIQUE`-Index in der Datenbank
-  empfohlen, damit gleichzeitige Registrierungen nicht zu doppelten
-  Benutzernamen führen können.
+  E-Mail) stammen aus einer alten Mustervorlage und sollten vor dem
+  Live-Gang geprüft und vervollständigt werden.
+- `node:sqlite` ist in Node.js noch als experimentell markiert; das ist
+  für ein privates Hobbyprojekt unkritisch, sollte aber im Hinterkopf
+  bleiben.
+- Der Docker-Build wurde in dieser Umgebung nicht gegen eine echte
+  Docker-Engine getestet (kein Daemon verfügbar) – bitte einmal
+  `docker compose up --build` auf dem Pi verifizieren.

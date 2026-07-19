@@ -1,0 +1,19 @@
+{
+  "name": "ginperium",
+  "version": "2.0.0",
+  "description": "Private Gin-Katalog- und Bewertungs-Webseite",
+  "private": true,
+  "license": "UNLICENSED",
+  "main": "server.js",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "seed:admin": "node scripts/seedAdmin.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
