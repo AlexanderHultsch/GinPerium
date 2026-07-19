@@ -1,82 +1,59 @@
 // Filterfunktion
-function FilterFunction() {
+function filterGins() {
   // Wert aus den Dropdown-Menüs auslesen
-  var selectedRegion = document.getElementById("RegionSelect").value;
-  var selectedTaste = document.getElementById("TasteSelect").value;
-  var selectedBotanical = document.getElementById("BotanicalSelect").value;
+  const selectedRegion = document.getElementById('RegionSelect').value;
+  const selectedTaste = document.getElementById('TasteSelect').value;
+  const selectedBotanical = document.getElementById('BotanicalSelect').value;
 
-  // Alle Gin-Container auswählen
-  var ginContainers = document.getElementsByClassName("GinContainer");
+  const ginContainers = document.getElementsByClassName('GinContainer');
 
-  // Schleife über alle Gin-Container
-  for (var i = 0; i < ginContainers.length; i++) {
-    // Attribute des aktuellen Gin-Containers auslesen
-    var currentRegion = ginContainers[i].querySelector(".Region").textContent.trim();
-    var currentTaste = ginContainers[i].querySelector(".Taste").textContent.trim();
-    var currentBotanicals = ginContainers[i].querySelector(".Botanicals").textContent.trim();
+  for (let i = 0; i < ginContainers.length; i++) {
+    const currentRegion = ginContainers[i].querySelector('.Region').textContent.trim();
+    const currentTaste = ginContainers[i].querySelector('.Taste').textContent.trim();
+    const currentBotanicals = ginContainers[i].querySelector('.Botanicals').textContent.trim();
 
-    // Überprüfen, ob der Gin-Container angezeigt werden soll
-    var showGinContainer = true;
-    if (selectedRegion != "keine Präferenz" && !currentRegion.includes(selectedRegion)) {
+    let showGinContainer = true;
+    if (selectedRegion !== 'keine Präferenz' && !currentRegion.includes(selectedRegion)) {
       showGinContainer = false;
     }
-    if (selectedTaste != "keine Präferenz" && currentTaste != selectedTaste) {
+    if (selectedTaste !== 'keine Präferenz' && currentTaste !== selectedTaste) {
       showGinContainer = false;
     }
-    if (selectedBotanical != "keine Präferenz" && !currentBotanicals.includes(selectedBotanical)) {
+    if (selectedBotanical !== 'keine Präferenz' && !currentBotanicals.includes(selectedBotanical)) {
       showGinContainer = false;
     }
 
-    // Gin-Container ein- oder ausblenden
-    if (showGinContainer) {
-      ginContainers[i].style.display = "flex";
-    } else {
-      ginContainers[i].style.display = "none";
-    }
+    ginContainers[i].style.display = showGinContainer ? 'flex' : 'none';
   }
 }
 
-// Alle Gin-Container anzeigen
-function showAllGinContainers() {
-  var ginContainers = document.getElementsByClassName("GinContainer");
-  for (var i = 0; i < ginContainers.length; i++) {
-    ginContainers[i].style.display = "flex";
-  }
-}
-
-// Sterne Bewertung initialisieren
+// Sterne-Bewertung initialisieren: Klick auf einen Stern wählt die Bewertung
+// aus, gesendet wird sie erst über den "Bewerten"-Button.
 function initializeStarRatings() {
-  const starContainers = document.querySelectorAll(".stars");
+  const starContainers = document.querySelectorAll('.stars');
 
   starContainers.forEach((container) => {
-    const rating = parseInt(container.dataset.rating);
-    const stars = container.querySelectorAll(".star");
+    const rating = parseInt(container.dataset.rating, 10);
+    const stars = container.querySelectorAll('.star');
+
+    const paintStars = (value) => {
+      stars.forEach((s) => {
+        s.textContent = parseInt(s.dataset.value, 10) <= value ? '★' : '☆';
+      });
+    };
+
+    paintStars(rating);
 
     stars.forEach((star) => {
-      const value = parseInt(star.dataset.value);
-      if (value <= rating) {
-        star.textContent = "★";
-      } else {
-        star.textContent = "☆";
-      }
-    
-      star.addEventListener("click", () => {
-        const form = container.closest(".rating-form");
-    
+      star.addEventListener('click', () => {
+        const value = parseInt(star.dataset.value, 10);
+        const form = container.parentNode.querySelector('.rating-form');
+
+        paintStars(value);
+        container.dataset.rating = value;
+
         if (form) {
-          const ratingInput = form.querySelector("input[name='rating']");
-    
-          container.querySelectorAll(".star").forEach((s) => {
-            if (parseInt(s.dataset.value) <= value) {
-              s.textContent = "★";
-            } else {
-              s.textContent = "☆";
-            }
-          });
-    
-          ratingInput.value = value;
-        } else {
-          console.log("Form element not found");
+          form.querySelector('input[name="rating"]').value = value;
         }
       });
     });
@@ -84,44 +61,7 @@ function initializeStarRatings() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  // Funktion für die Rücksetzung der Filter
-  function NofilterFunction() {
-    // Wert der Dropdown-Menüs auf "keine Präferenz" setzen
-    document.getElementById("RegionSelect").value = "keine Präferenz";
-    document.getElementById("TasteSelect").value = "keine Präferenz";
-    document.getElementById("BotanicalSelect").value = "keine Präferenz";
-  }
+  document.getElementById('SearchButton')?.addEventListener('click', filterGins);
 
-
-
-  // Funktion für den "Akzeptieren"-Button des Cookie-Banners
-  document.getElementById("accept-cookies").addEventListener("click", function (event) {
-    event.preventDefault();
-    document.getElementById("cookie-banner").style.display = "none";
-  });
-
-  // Funktion für den "Ablehnen"-Button des Cookie-Banners
-  document.getElementById("decline-cookies").addEventListener("click", function (event) {
-    event.preventDefault();
-    document.getElementById("cookie-banner").style.display = "none";
-  });
-
-// Sterne Bewertung initialisieren
-initializeStarRatings();
-
-// Bewertung absenden
-const ratingButtons = document.querySelectorAll(".button-rating");
-ratingButtons.forEach(button => {
-  button.addEventListener("click", function (event) {
-    const form = button.closest(".rating-form");
-    const ginName = form.querySelector('input[name="gin_name"]').value;
-    const ratingInput = form.querySelector('input[name="rating"]');
-    const starsContainer = form.parentNode.querySelector(".stars");
-    const currentRating = starsContainer.dataset.rating;
-
-    ratingInput.value = currentRating;
-    form.submit();
-  });
-});
- 
+  initializeStarRatings();
 });

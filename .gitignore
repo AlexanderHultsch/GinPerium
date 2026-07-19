@@ -1,0 +1,10 @@
+# Lokale Konfiguration mit echten Zugangsdaten - niemals committen
+php/config.php
+
+# Betriebssystem- und Editor-Dateien
+.DS_Store
+Thumbs.db
+*.swp
+
+# Logs
+*.log
