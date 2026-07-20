@@ -1,9 +1,12 @@
-# GinPerium — Redesign-Spezifikation (v2)
+# GinPerium — Redesign-Spezifikation (v2, final)
 
 Konzept für den Umbau zu einer **lean, modern, modular, wartbaren** Web-App.
 Angelehnt an die bewährten Muster des Schwesterprojekts **WineCashing**
-(gleicher Pi, gleiche Infrastruktur). Kein Code — dies ist die Grundlage
-für die Umsetzung im nächsten Schritt.
+(gleicher Pi, gleiche Infrastruktur) — WineCashing dient dabei ausschließlich
+als **Lesereferenz** und wird nie verändert.
+
+Alle offenen Punkte sind abgestimmt (siehe §13). Dies ist die verbindliche
+Grundlage für die Umsetzung.
 
 ---
 
@@ -18,11 +21,12 @@ für die Umsetzung im nächsten Schritt.
 - **Lean & wartbar.** Vanilla JS ohne Build-Schritt, kleine klar getrennte
   Module, alle sichtbaren Texte/Farben zentral an einer Stelle.
 - **Konsistent mit WineCashing.** Login- und Datenbank-Logik werden von dort
-  übernommen (gleiche Architektur, gleiches Deployment-Muster).
+  als Muster übernommen (gleiche Architektur, gleiches Deployment-Muster) —
+  ohne das WineCashing-Repo selbst anzufassen.
 - **Einfach zu nutzen.** Katalog sofort da, Filtern/Sortieren direkt sichtbar,
   Bewerten mit einem Klick.
 
-### Aus den geklärten Fragen
+### Abgestimmte Rahmenentscheidungen
 | Thema | Entscheidung |
 |---|---|
 | Sichtbarkeit | Katalog **öffentlich**, Login nur zum Bewerten |
@@ -30,13 +34,18 @@ für die Umsetzung im nächsten Schritt.
 | Technik | Login-/DB-Logik von **WineCashing** übernehmen, Vanilla JS |
 | Look | **Botanisch & warm**, auto hell/dunkel |
 | Zusatzfunktion | **Sortierung** (keine Freitextsuche, keine Detailseiten, kein manueller Theme-Umschalter) |
+| Datenbank | **Eigene, vollständig getrennte DB** (eigenes Volume/eigene Datei, nichts mit anderen Projekten geteilt); GinPerium-DB darf zurückgesetzt werden |
+| Preis-/Alkohol | **Numerische Felder** ergänzen (für Sortierung) |
+| Login-UI | **Modal-Overlay** auf der Katalogseite |
+| Logo | **PNG** (`images/GinIcon.png`), kein Emoji |
 
 ---
 
 ## 2. Überblick: was bleibt, was sich ändert
 
 **Bleibt inhaltlich:**
-- Node.js + Express + `node:sqlite`, ein Docker-Container mit Volume auf dem Pi
+- Node.js + Express + `node:sqlite`, ein Docker-Container mit **eigenem**
+  Volume auf dem Pi
 - Der Gin-Katalog als versionierter Seed (`db/seedData.js`, 19 Gins)
 - Bewertungslogik: 1 Bewertung pro Nutzer:in und Gin (Upsert)
 
@@ -54,9 +63,10 @@ für die Umsetzung im nächsten Schritt.
 
 **Ändert sich (UX/Frontend, das eigentliche Redesign):**
 - Öffentlicher Single-Page-Katalog mit gemeinsamer Navigation
-- Login/Registrierung als **Overlay/Modal** statt eigener Seiten
+- Login/Registrierung als **Modal-Overlay** statt eigener Seiten
 - Neues botanisches Design-System, aufgeräumte Gin-Karten
 - Filter **plus Sortierung**, sofort im Katalogkopf bedienbar
+- PNG-Logo als Marke
 
 ---
 
@@ -65,7 +75,8 @@ für die Umsetzung im nächsten Schritt.
 Drei schlanke HTML-Einstiegspunkte (kein Client-Router, wie bei WineCashing):
 
 1. **`index.html` — Öffentlicher Katalog** (Startseite)
-   - Kopf: Marke, Filter (Region / Geschmack / Botanicals) + **Sortierung**
+   - Kopf: Marke (PNG-Logo), Filter (Region / Geschmack / Botanicals) +
+     **Sortierung**
    - Liste der Gin-Karten (öffentlich, inkl. Ø-Bewertung)
    - Navigation mit **Login** (bzw. Nutzername + Logout, wenn eingeloggt)
    - Sternebewertung: Klick ohne Login → Login-Modal; mit Login → speichert
@@ -138,26 +149,22 @@ scripts/
 Kernänderung ggü. heute: **`GET /api/gins` verliert die Login-Pflicht**;
 nur das Abgeben einer Bewertung bleibt geschützt.
 
-### 5.3 Datenmodell-Anpassung für Sortierung
+### 5.3 Datenmodell-Anpassung für Sortierung *(entschieden)*
 Sortierung nach Bewertung und Name geht direkt. Für **Preis** und
 **Alkohol** sind die heutigen Felder Freitext (`"26,90€ || 0,7l"`,
-`"ALC.: 42 %"`) und nicht numerisch sortierbar. Vorschlag:
+`"ALC.: 42 %"`) und nicht numerisch sortierbar. Daher:
 
 - Neue **numerische Felder** in `gins`: `price_eur REAL`, `abv REAL`
   (optional `volume_l REAL`) — zusätzlich zu den bestehenden Anzeige-Strings.
 - Seed-Daten (`seedData.js`) um diese Werte ergänzen (aus den vorhandenen
-  Strings ableitbar).
-- Anzeige bleibt wie gehabt; sortiert wird über die numerischen Felder.
-
-*(Alternative ohne Schemaänderung: Zahlen clientseitig aus den Strings
-parsen. Weniger robust — Empfehlung ist das saubere numerische Feld.)*
+  Strings abgeleitet).
+- Anzeige bleibt wie gehabt (Strings); sortiert wird über die numerischen
+  Felder. Sortier-Optionen: **Name**, **Ø-Bewertung**, **Preis**, **Alkohol**.
 
 ### 5.4 Passwort-Format
-WineCashing nutzt `scrypt$N$r$p$saltHex$hashHex`. GinPerium nutzt aktuell
-`scrypt:salt:hash`. Für volle Konsistenz wird das WineCashing-Format
-übernommen. **Konsequenz:** bereits auf dem Pi registrierte Konten (bisher
-altes Format) müssten sich neu registrieren bzw. Passwort zurücksetzen.
-Da die Seite frisch live ist, ist das unkritisch (siehe §10).
+GinPerium übernimmt das WineCashing-Format `scrypt$N$r$p$saltHex$hashHex`.
+Da die GinPerium-DB ohnehin zurückgesetzt wird (§10), entsteht dabei kein
+Migrationsproblem mit Altkonten.
 
 ---
 
@@ -172,7 +179,7 @@ public/
   datenschutz.html      Info/Datenschutz
   css/styles.css        Design-System (:root-Tokens) + Komponenten
   js/
-    config.js            SITE_NAME, Texte, Emojis/Logo, Sortier-Optionen — HIER anpassen
+    config.js            SITE_NAME, Texte, LOGO_SRC (PNG), Sortier-Optionen — HIER anpassen
     api.js               fetch-Wrapper (credentials, Fehler-Umschlag → Error{code})
     nav.js               gemeinsame Navigation (Login/Logout/Admin/Info)
     catalog.js           laden, State halten, rendern (Katalogseite)
@@ -183,7 +190,9 @@ public/
 ```
 
 Prinzipien (von WineCashing übernommen):
-- **`config.js`** ist die einzige Stelle für sichtbare Texte/Marke/Emojis.
+- **`config.js`** ist die einzige Stelle für sichtbare Texte/Marke. Das Logo
+  ist ein **PNG** (`LOGO_SRC = 'images/GinIcon.png'`); die Marke wird als
+  `<img class="brand-icon" src=… alt=SITE_NAME>` gerendert (kein Emoji).
 - **`nav.js`** rendert eine gemeinsame Navigation; Seiten verdrahten ihre
   eigenen Aktionen über `data-nav`-Attribute. Nutzereingaben werden vor
   `innerHTML` escaped (Self-XSS-Schutz).
@@ -224,8 +233,7 @@ Typografie & Anmutung:
 - Botanicals als **Chips/Tags** statt Fließtext-Liste.
 
 Komponenten:
-- **Topbar** mit Marke (Blatt-/Botanik-Emoji als Logo, in `config.js`) +
-  Hamburger-Nav.
+- **Topbar** mit Marke (**PNG-Logo** + `SITE_NAME`) + Hamburger-Nav.
 - **Filter-/Sortierleiste**: Region/Geschmack/Botanicals als Selects,
   Sortierung als eigenes Select, „Zurücksetzen"-Link. Sticky beim Scrollen.
 - **Gin-Karte**: Foto, Name, Region/Geschmack/Preis/Alk. als kompakte
@@ -248,7 +256,7 @@ Komponenten:
    ohne Reload; Sortierung nach Name / Ø-Bewertung / Preis / Alkohol.
 3. **Bewerten:** Klick auf Stern → falls nicht eingeloggt, Auth-Modal;
    nach Login `PUT /api/gins/:id/rating` → Ø + eigene Bewertung aktualisieren.
-4. **Login/Registrierung:** Overlay, offen registrierbar; Session-Cookie;
+4. **Login/Registrierung:** Modal-Overlay, offen registrierbar; Session-Cookie;
    Nav zeigt danach Nutzername + Logout.
 5. **Admin:** `admin.html` (nur `is_admin`) → Gins pflegen, Nutzer verwalten.
 
@@ -256,6 +264,10 @@ Komponenten:
 
 ## 9. Deployment & Konfiguration (an WineCashing angeglichen)
 
+- **Eigene, getrennte Datenbank.** GinPerium hat ein **eigenes benanntes
+  Docker-Volume** und eine **eigene DB-Datei** (`DB_PATH=/data/ginperium.db`),
+  völlig unabhängig von WineCashing oder anderen Apps auf dem Pi. Keine
+  gemeinsame Datei, kein gemeinsames Volume.
 - **`.env`** (Vorlage `.env.example`): `PORT`, `DB_PATH`, `SESSION_SECRET`
   (Pflicht!), `ADMIN_USERNAME`/`ADMIN_PASSWORD`, optional `SECURE_COOKIES`,
   `TRUST_PROXY`.
@@ -265,7 +277,8 @@ Komponenten:
   (`no-store` für App-Assets, `immutable` für versionierte Vendors).
 - **Dockerfile / docker-entrypoint.sh**: unverändertes Muster
   (node:24-alpine, `su-exec`, Volume-`chown`) — bereits nahezu identisch.
-- **`docker-compose.yml`**: `env_file: .env`, benanntes Volume für die DB.
+- **`docker-compose.yml`**: `env_file: .env`, **eigenes** benanntes Volume
+  für die DB.
 - **Qualität**: `npm run lint` (ESLint flat) + `npm run format` (Prettier),
   `.editorconfig`.
 
@@ -275,13 +288,11 @@ Komponenten:
 
 - **Gin-Katalog** bleibt: `seedData.js` + `seedGinsIfEmpty()` beim Start;
   ergänzt um `price_eur`/`abv` (§5.3).
-- **Bestehende DB auf dem Pi** enthält aktuell nur den geseedeten Katalog
-  (regenerierbar) und ggf. einen frisch registrierten Admin-Account.
-  Empfehlung: **DB-Volume einmalig zurücksetzen** und neu seeden — sauberer
-  Schnitt für das neue Passwort-Format und die neuen Spalten. Danach Admin
-  per `npm run seed:admin` (oder erste Registrierung) neu anlegen.
-- Falls das Volume erhalten bleiben soll: leichte Migration (neue Spalten
-  additiv), Nutzerkonten müssten sich einmalig neu registrieren.
+- **GinPerium-DB wird zurückgesetzt.** Das GinPerium-Volume wird einmalig
+  neu angelegt (sauberer Schnitt für neues Passwort-Format + neue Spalten);
+  der Katalog seedet beim Start automatisch, der Admin wird per
+  `npm run seed:admin` (oder erste Registrierung) neu angelegt. Andere
+  Projekte/Volumes auf dem Pi sind davon **nicht** betroffen (getrennte DB).
 
 ---
 
@@ -290,36 +301,36 @@ Komponenten:
 - `password.test.js` — Hashing/Verify im neuen Format.
 - `domain.test.js` — Validierung (Bewertung 1–5, Gin-Felder).
 - `filters.test.js` — **neu**: reine Filter-/Sortierfunktionen.
-- `seedData.test.js` — Namen eindeutig, Bilder vorhanden, Felder gültig.
+- `seedData.test.js` — Namen eindeutig, Bilder vorhanden, Felder gültig
+  (inkl. numerischer Preis-/Alkoholwerte).
 - `api.test.js` — Ende-zu-Ende gegen `:memory:`-DB: **öffentlicher**
   Katalogzugriff ohne Login, Bewerten nur mit Login, Admin-Gating,
   Registrierung/Login/Logout.
 
 ---
 
-## 12. Umsetzung in Etappen (Vorschlag)
+## 12. Umsetzung in Etappen
 
 1. **Backend-Angleichung**: ESM, `createApp`-Factory, `express-session`,
    Fehler-Umschlag, `.env`, `GET /api/gins` öffentlich. Tests grün.
 2. **Datenmodell**: numerische `price_eur`/`abv`, Seed ergänzen.
-3. **Design-System**: `styles.css` mit botanischen Tokens, `config.js`.
+3. **Design-System**: `styles.css` mit botanischen Tokens, `config.js`
+   inkl. PNG-Logo.
 4. **Frontend-Neubau**: `nav.js`, `catalog.js`, `filters.js`, `ratings.js`,
    `authModal.js`; öffentliche Katalogseite + Sortierung.
 5. **Admin-Seite** im neuen Design.
-6. **Qualität/Deployment**: ESLint/Prettier, `.env.example`, Docker prüfen,
-   README aktualisieren.
+6. **Qualität/Deployment**: ESLint/Prettier, `.env.example`, Docker + eigenes
+   Volume prüfen, README aktualisieren.
 
 ---
 
-## 13. Offene Punkte (bitte bestätigen, dann ist die Spec final)
+## 13. Abgestimmte Entscheidungen (final)
 
-1. **DB-Reset ok?** Für das neue Passwort-Format + neue Spalten empfehle ich,
-   das DB-Volume auf dem Pi einmalig zurückzusetzen (Katalog wird automatisch
-   neu geseedet, Admin neu anlegen). Einverstanden — oder Volume erhalten?
-2. **Numerische Preis-/Alkohol-Felder** hinzufügen (für saubere Sortierung)?
-   Empfehlung: ja.
-3. **Login als Modal** auf der Katalogseite (statt eigener Login-/Register-
-   Seiten)? Empfehlung: ja (leaner, moderner).
-4. **Marke/Logo**: Emoji als Logo (z. B. 🌿) in `config.js`, oder soll ein
-   vorhandenes Bild (`images/GinIcon.png`) als Logo dienen?
-```
+1. **Getrennte Datenbank** — GinPerium bekommt ein eigenes, von allen anderen
+   Projekten vollständig getrenntes Volume/DB-File. Die GinPerium-DB wird für
+   den Umbau zurückgesetzt.
+2. **Numerische Preis-/Alkohol-Felder** — werden ergänzt (Sortierung).
+3. **Login als Modal** — Overlay auf der Katalogseite statt eigener Seiten.
+4. **Logo als PNG** — `images/GinIcon.png`, kein Emoji.
+
+Damit ist die Spezifikation final und bereit für die Umsetzung (Etappe 1).
