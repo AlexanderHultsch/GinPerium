@@ -6,11 +6,17 @@ import { NO_PREFERENCE, SORT_OPTIONS } from './config.js';
 import { buildFilterOptions, filterGins, sortGins } from './filters.js';
 import { starsMarkup, ratingMetaMarkup, wireStarClicks } from './ratings.js';
 import { openAuthModal } from './authModal.js';
+import { showToast } from './toast.js';
 
 let allGins = [];
 let currentUser = null;
 
 const state = { region: NO_PREFERENCE, taste: NO_PREFERENCE, botanical: NO_PREFERENCE, sort: 'name' };
+
+// Welche Gin-Storys aufgeklappt sind — als Set von Gin-IDs statt im DOM
+// gehalten, damit "mehr lesen" nicht bei jedem Filter-/Sortier-/Bewertungs-
+// Neurendern wieder zuklappt (das Grid wird dabei komplett neu aufgebaut).
+const expandedStories = new Set();
 
 function escapeHtml(value) {
   const div = document.createElement('div');
@@ -65,10 +71,10 @@ function renderFilterOptions() {
 }
 
 function ginCardMarkup(gin) {
-  const interactive = !!currentUser;
+  const expanded = expandedStories.has(gin.id);
   return `
     <article class="gin-card${gin.inStock ? '' : ' out-of-stock'}" data-name="${escapeHtml(gin.name)}">
-      ${gin.inStock ? '' : '<span class="out-of-stock-badge">Ausverkauft</span>'}
+      ${gin.inStock ? '' : '<span class="out-of-stock-badge">Nicht vorrätig</span>'}
       <div class="gin-card-photo">
         <img src="images/${escapeHtml(gin.image)}" alt="${escapeHtml(gin.name)}" loading="lazy">
       </div>
@@ -88,14 +94,16 @@ function ginCardMarkup(gin) {
             .map((b) => `<span class="chip">${escapeHtml(b)}</span>`)
             .join('')}
         </div>
-        <p class="gin-card-story" data-collapsed="true">${escapeHtml(gin.story)}</p>
-        <button type="button" class="story-toggle" data-action="toggle-story">mehr lesen</button>
+        <p class="gin-card-story" data-collapsed="${!expanded}">${escapeHtml(gin.story)}</p>
+        <button type="button" class="story-toggle" data-action="toggle-story" data-gin-id="${gin.id}">
+          ${expanded ? 'weniger' : 'mehr lesen'}
+        </button>
         <p class="gin-card-serve">
           <img src="images/ui/PerfectServe.svg" alt="">
           ${escapeHtml(gin.perfectServe)}
         </p>
         <div class="rating-row">
-          ${starsMarkup(gin, { interactive })}
+          ${starsMarkup(gin)}
           ${ratingMetaMarkup(gin)}
         </div>
       </div>
@@ -105,10 +113,13 @@ function ginCardMarkup(gin) {
 function wireStoryToggles(root) {
   root.querySelectorAll('[data-action="toggle-story"]').forEach((button) => {
     button.addEventListener('click', () => {
+      const ginId = button.dataset.ginId;
       const story = button.previousElementSibling;
       const collapsed = story.dataset.collapsed !== 'false';
       story.dataset.collapsed = String(!collapsed);
       button.textContent = collapsed ? 'weniger' : 'mehr lesen';
+      if (collapsed) expandedStories.add(ginId);
+      else expandedStories.delete(ginId);
     });
   });
 }
@@ -119,10 +130,15 @@ async function handleRate(ginId, value) {
     return;
   }
   try {
-    await api.rateGin(ginId, value);
-    await loadCatalog();
+    // Nur die Antwort für DIESEN einen Gin übernehmen statt den ganzen
+    // Katalog neu zu laden — kein "Lädt …"-Flackern über alle Karten hinweg,
+    // und aufgeklappte "mehr lesen"-Texte anderer Karten bleiben erhalten.
+    const { gin } = await api.rateGin(ginId, value);
+    const index = allGins.findIndex((g) => g.id === ginId);
+    if (index !== -1) allGins[index] = gin;
+    renderGrid();
   } catch (err) {
-    alert(err.message);
+    showToast(err.message, 'error');
   }
 }
 

@@ -130,7 +130,7 @@ test('Auth-, Gin- und Admin-Flow Ende-zu-Ende', async (t) => {
   });
 
   await t.test(
-    'Als ausverkauft markierter Gin bleibt im öffentlichen Katalog sichtbar (nur inStock: false)',
+    'Als nicht vorrätig markierter Gin bleibt im öffentlichen Katalog sichtbar (nur inStock: false)',
     async () => {
       const update = await server.request('PUT', `/api/admin/gins/${ginId}`, {
         ...BASE_GIN,

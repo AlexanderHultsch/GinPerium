@@ -3,10 +3,15 @@
 import { api } from './api.js';
 
 let overlayEl = null;
+let keydownHandler = null;
 
 function closeAuthModal() {
   overlayEl?.remove();
   overlayEl = null;
+  if (keydownHandler) {
+    document.removeEventListener('keydown', keydownHandler);
+    keydownHandler = null;
+  }
 }
 
 function renderModal(tab) {
@@ -92,6 +97,10 @@ export function openAuthModal({ tab = 'login', onSuccess } = {}) {
   overlayEl = wrapper.firstElementChild;
   document.body.appendChild(overlayEl);
   wireModal(onSuccess);
+  keydownHandler = (e) => {
+    if (e.key === 'Escape') closeAuthModal();
+  };
+  document.addEventListener('keydown', keydownHandler);
   document.getElementById('auth-username')?.focus();
 }
 

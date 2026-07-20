@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isValidRating, validateGinPayload, formatCost } from '../lib/domain.js';
+import { isValidRating, validateGinPayload, formatCost, GIN_FIELD_LABELS } from '../lib/domain.js';
 
 test('isValidRating akzeptiert 1 bis 5', () => {
   for (const value of [1, 2, 3, 4, 5]) assert.equal(isValidRating(value), true);
@@ -73,4 +73,32 @@ test('validateGinPayload lehnt ungültige priceEur/abv ab', () => {
   assert.equal(validateGinPayload({ ...VALID_GIN, priceEur: -1 }).valid, false);
   assert.equal(validateGinPayload({ ...VALID_GIN, abv: 101 }).valid, false);
   assert.equal(validateGinPayload({ ...VALID_GIN, abv: -1 }).valid, false);
+});
+
+test('validateGinPayload akzeptiert deutsches Komma als Dezimaltrennzeichen', () => {
+  const result = validateGinPayload({ ...VALID_GIN, priceEur: '26,90', abv: '40,5', volumeL: '0,7' });
+  assert.equal(result.valid, true);
+  assert.equal(result.gin.priceEur, 26.9);
+  assert.equal(result.gin.abv, 40.5);
+  assert.equal(result.gin.volumeL, 0.7);
+});
+
+test('GIN_FIELD_LABELS deckt jedes von validateGinPayload gemeldete Feld ab', () => {
+  const allFields = [
+    'name',
+    'image',
+    'region',
+    'taste',
+    'alcohol',
+    'category',
+    'botanicals',
+    'story',
+    'perfectServe',
+    'priceEur',
+    'abv',
+    'volumeL',
+  ];
+  for (const field of allFields) {
+    assert.ok(GIN_FIELD_LABELS[field], `Kein sprechendes Label für "${field}"`);
+  }
 });

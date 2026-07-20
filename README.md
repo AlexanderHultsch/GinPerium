@@ -32,8 +32,8 @@ docker-entrypoint.sh    chown /data an node, dann Rechte über su-exec abgeben
 docker-compose.yml      Ein Service, eigenes benanntes Volume für die DB-Datei
 routes/
   auth.js               createAuthRouter: Register/Login/Logout/me
-  gins.js                createGinsRouter: Katalog (öffentlich) + Bewertung (Login)
-  admin.js                createAdminRouter: Gin-CRUD + Nutzerverwaltung (nur Admin)
+  gins.js                createGinsRouter: Katalog (öffentlich, nur sichtbare Gins) + Bewertung (Login)
+  admin.js                createAdminRouter: Gin-CRUD (alle Gins) + Nutzerverwaltung (nur Admin)
 middleware/
   auth.js                 createAuth(repo): attachUser / requireAuth / requireAdmin
   errorEnvelope.js         ApiError, apiError(key), ERR-Tabelle, zentraler errorHandler
@@ -61,9 +61,10 @@ public/
     nav.js                     Gemeinsame Navigation (Login/Logout/Admin/Info)
     catalog.js                 Katalogseite: laden, filtern, sortieren, bewerten
     filters.js                  Reine Filter-/Sortierfunktionen (browserlos testbar)
-    ratings.js                  Sterne-Markup + Klick-Verdrahtung
-    authModal.js                 Login/Registrierung als Modal-Overlay
-    admin.js                    Verwaltungsseite
+    ratings.js                  Sterne-Markup (echte <button>s) + Klick-Verdrahtung
+    authModal.js                 Login/Registrierung als Modal-Overlay (Esc schließt)
+    admin.js                    Verwaltungsseite inkl. Inline-Toggles für Vorrat/Sichtbarkeit
+    toast.js                     Kleine Statusmeldung für Fehler außerhalb von Formularen
     cookieBanner.js              Cookie-Hinweis inkl. Persistenz
   images/
     gins/                      Flaschenfotos
@@ -71,7 +72,7 @@ public/
     GinIcon.png                Logo (Marke)
 test/
   password.test.js            Passwort-Hashing
-  domain.test.js               Reine Validierungslogik
+  domain.test.js               Reine Validierungslogik (inkl. Komma-Dezimalzahlen, Fehler-Labels)
   filters.test.js               Reine Filter-/Sortierfunktionen
   seedData.test.js               Katalog-Daten (Namen eindeutig, Bilder vorhanden, gültig)
   api.test.js                    Ende-zu-Ende über echten HTTP-Server (:memory:)
@@ -90,12 +91,36 @@ test/
 alles andere verlangt mindestens eine Session (Bewerten) bzw. Admin-Rechte
 (Verwaltung).
 
+## Vorrätig & Sichtbar
+
+Jeder Gin hat zwei unabhängige Admin-Flags, direkt in der Verwaltungs-
+Tabelle als Checkboxen umschaltbar (kein Umweg über das Bearbeiten-Formular
+nötig):
+
+- **Vorrätig** (aus): Der Gin bleibt im öffentlichen Katalog sichtbar,
+  wird aber ausgegraut und mit dem Hinweis „Nicht vorrätig" markiert.
+  Weiterhin bewertbar — das ist eine private Sammlung, kein Shop, alte
+  Eindrücke bleiben also gültig.
+- **Sichtbar** (aus): Der Gin verschwindet komplett aus dem öffentlichen
+  Katalog (`GET /api/gins`), bleibt aber in der Datenbank und in der
+  Admin-Übersicht (`GET /api/admin/gins`, zeigt _alle_ Gins) erhalten und
+  jederzeit wieder einblendbar.
+
+## Preis & Menge
+
+Preis (`priceEur`) und Flaschengröße (`volumeL`) sind separate, numerische
+Pflichtfelder in der Datenbank (für die Sortierung). Auf der Katalogseite
+werden sie automatisch zu einem Anzeige-Text kombiniert (`lib/domain.js#formatCost`),
+z. B. `26,90 € für 0,7 l` — im Admin-Formular reicht die Eingabe der
+beiden Zahlen, ein separates "Anzeige-Text"-Feld für den Preis gibt es
+nicht (mehr). Beim Eintippen ist sowohl `26.90` als auch `26,90` gültig.
+
 ## Gin-Katalog / Seed-Daten
 
 `db/seedData.js` enthält den ursprünglichen Gin-Katalog (19 Gins,
 rekonstruiert aus einem Backup der alten Seite, inkl. numerischer
-`priceEur`/`abv`-Felder für die Sortierung) fest im Repo. Beim ersten
-Start wird eine **leere** `gins`-Tabelle automatisch damit befüllt
+`priceEur`/`abv`/`volumeL`-Felder) fest im Repo. Beim ersten Start wird
+eine **leere** `gins`-Tabelle automatisch damit befüllt
 (`seedGinsIfEmpty` in `server.js`) — dadurch bringt jedes frische Docker-
 Volume auf dem Pi den kompletten Katalog gleich mit, ohne dass man ihn
 manuell über `/admin.html` neu eintippen muss. Spätere Änderungen über
@@ -149,7 +174,10 @@ docker compose up -d --build
   ```bash
   docker compose exec ginperium node scripts/seedAdmin.js <benutzername> <passwort>
   ```
-  (liest alternativ `ADMIN_USERNAME`/`ADMIN_PASSWORD` aus der Umgebung)
+  (liest alternativ `ADMIN_USERNAME`/`ADMIN_PASSWORD` aus der Umgebung.
+  **Achtung:** Das Skript setzt bei einem bereits existierenden Nutzer
+  auch `is_admin = true` — für einen reinen Passwort-Reset eines
+  gewöhnlichen Nutzers also ungeeignet, siehe „Bekannte offene Punkte".)
 
 ## Tests & Qualität
 
@@ -158,6 +186,38 @@ npm test      # node --test — inkl. Ende-zu-Ende-Test gegen :memory:-SQLite
 npm run lint  # ESLint (flat config)
 npm run format # Prettier --write
 ```
+
+## Code-Review: Nutzerfreundlichkeit (Juli 2026)
+
+Ein gezielter Review-Durchgang mit Fokus auf End-Nutzer:innen und Admin
+hat folgende Verbesserungen direkt umgesetzt:
+
+- **Sterne sind jetzt echte `<button>`-Elemente** statt `<span>` — per
+  Tab erreichbar und mit Enter/Leertaste auslösbar, nicht mehr nur per
+  Maus/Touch bedienbar.
+- **Kein "Lädt …"-Flackern beim Bewerten mehr.** Ein Klick auf einen
+  Stern hat vorher den kompletten Katalog neu geladen (Netzwerk-Roundtrip
+  über alle Gins) und dabei kurz die ganze Seite auf einen Ladezustand
+  zurückgesetzt. Jetzt wird nur die Antwort für den einen bewerteten Gin
+  übernommen und ausschließlich das Grid neu gerendert.
+- **Aufgeklappte "mehr lesen"-Texte bleiben erhalten**, auch wenn man
+  filtert, sortiert oder einen _anderen_ Gin bewertet (vorher sind alle
+  aufgeklappten Storys bei jedem Neu-Rendern des Grids wieder
+  eingeklappt).
+- **Escape schließt das Login-/Registrierungs-Modal.**
+- **Fehlermeldungen als Toast statt nativem `alert()`**, wenn eine
+  Bewertung oder das Umschalten von Vorrätig/Sichtbar fehlschlägt — passt
+  zum Rest der Oberfläche und blockiert nicht den Browser-Tab.
+- **Admin-Formular akzeptiert deutsches Komma** bei Preis/Alkohol/Menge
+  (`26,90` genauso wie `26.90`) — vorher führte ein Komma zu einer
+  kryptischen Fehlermeldung, obwohl der Rest der Seite Zahlen im
+  deutschen Format anzeigt.
+- **Verständlichere Validierungsfehler**: Admin-Formular und
+  Registrierung melden jetzt sprechende Feldnamen ("Feld
+  \"Flaschengröße in Liter\" ist ungültig oder leer.") statt interner
+  camelCase-Bezeichner ("Feld \"volumeL\" ist ungültig.").
+- **"Ausverkauft" → "Nicht vorrätig"**: Ginperium ist eine private
+  Sammlung, kein Shop.
 
 ## Umzug von der PHP/MySQL-Version (Ausgangslage)
 
@@ -177,9 +237,9 @@ Diese Version ersetzt die ursprüngliche PHP/MySQL-Umsetzung vollständig:
   Login versteckt. Jetzt ist er öffentlich lesbar; ein Konto braucht man
   nur noch zum Bewerten.
 - **Gin-Verwaltung**: Es gibt eine echte Oberfläche (`/admin.html`), um
-  Gins anzulegen/zu bearbeiten/zu löschen. Vorher ging das nur direkt in
-  der Datenbank (z. B. über phpMyAdmin bei Strato) — auf dem Pi ohne
-  solches Tool keine Option mehr.
+  Gins anzulegen/zu bearbeiten/zu löschen, inkl. Vorrat/Sichtbarkeit.
+  Vorher ging das nur direkt in der Datenbank (z. B. über phpMyAdmin bei
+  Strato) — auf dem Pi ohne solches Tool keine Option mehr.
 - **Auth**: Passwort-Hashing weiterhin mit einem starken KDF (scrypt über
   `node:crypto`), Sessions jetzt über `express-session` statt eigenem
   Cookie-/Session-Handling.
@@ -192,12 +252,40 @@ separate Erklärung mehr für Ginperium selbst.
 
 ## Bekannte offene Punkte
 
+Bewusste Design-Entscheidungen (kein Handlungsbedarf):
+
 - Es gibt keinen Bild-Upload über die Admin-Oberfläche — neue
   Flaschenfotos werden manuell auf den Pi (bzw. in das Docker-Volume/
   Repo unter `public/images/gins/`) kopiert, bevor man den Dateinamen im
-  Formular einträgt. Das ist so gewollt, kein offener Punkt.
+  Formular einträgt.
 - `node:sqlite` ist in Node.js noch als experimentell markiert; für ein
   privates Hobbyprojekt unkritisch, aber im Hinterkopf zu behalten.
 - Der Docker-Build wurde in der Entwicklungsumgebung nicht gegen eine
   echte Docker-Engine getestet (kein Daemon verfügbar) — bitte einmal
   `docker compose up --build` auf dem Pi verifizieren.
+
+Aus dem Nutzerfreundlichkeits-Review zurückgestellt (funktionieren, sind
+aber ausbaufähig — bei Bedarf gerne als eigene Aufgabe angehen):
+
+- **Kein Passwort-Reset für gewöhnliche Nutzer:innen.** Vergisst jemand
+  außer dem Admin selbst sein Passwort, gibt es aktuell keinen Weg, es
+  zurückzusetzen, ohne die Person versehentlich zum Admin zu befördern
+  (`scripts/seedAdmin.js` setzt bei existierenden Nutzern immer
+  `is_admin = true`). Für den privaten Rahmen vermutlich unkritisch,
+  aber gut zu wissen, bevor mehr Leute als nur der engste Kreis ein
+  Konto haben.
+- **Keine Passwort-Bestätigung bei der Registrierung.** Ein Tippfehler
+  im Passwortfeld fällt erst beim nächsten Login auf einem neuen Gerät
+  auf (das Registrierungs-Formular meldet sich direkt danach mit
+  denselben, ggf. verlippten Zeichen automatisch an).
+- **Löschen-Bestätigungen laufen über das native `confirm()`-Dialogfeld**
+  (Gin/Nutzer löschen) statt über ein zum Design passendes Modal — für
+  diese seltene, absichtlich "unbequeme" Aktion pragmatisch in Ordnung,
+  aber ein Stilbruch.
+- **Admin-Tabelle rendert bei jedem Inline-Toggle (Vorrätig/Sichtbar)
+  komplett neu**, statt nur die betroffene Zeile zu aktualisieren. Bei
+  einer Sammlung von 20–40 Gins nicht spürbar, potenziell aber ein
+  Ruckler bei sehr vielen Einträgen.
+- **Sticky-Toolbar-Position ist mit `top: 66px` hart an die Nav-Höhe
+  gekoppelt** (`public/css/styles.css`). Bricht nicht sichtbar, ist aber
+  brüchig, falls die Navigation jemals höher wird.

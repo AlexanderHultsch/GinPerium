@@ -1,11 +1,14 @@
 // Admin-Verwaltung (nur is_admin): Gin-CRUD + Nutzerverwaltung.
 import { Router } from 'express';
 import { apiError } from '../middleware/errorEnvelope.js';
-import { validateGinPayload, publicGin, publicAdminUser } from '../lib/domain.js';
+import { validateGinPayload, publicGin, publicAdminUser, GIN_FIELD_LABELS } from '../lib/domain.js';
 
 function readGinPayload(body) {
   const result = validateGinPayload(body);
-  if (!result.valid) throw apiError('VALIDATION', `Feld "${result.field}" ist ungültig.`);
+  if (!result.valid) {
+    const label = GIN_FIELD_LABELS[result.field] ?? result.field;
+    throw apiError('VALIDATION', `Feld "${label}" ist ungültig oder leer.`);
+  }
   return result.gin;
 }
 
@@ -16,7 +19,7 @@ export function createAdminRouter({ repo, auth, newId, now }) {
   // -- Gins --
 
   // Anders als der öffentliche Katalog (routes/gins.js) liefert diese Route ALLE
-  // Gins, auch ausverkaufte/unsichtbare — sonst könnte die Admin-Oberfläche sie
+  // Gins, auch nicht vorrätige/unsichtbare — sonst könnte die Admin-Oberfläche sie
   // nicht wieder einblenden.
   router.get('/gins', (req, res) => {
     const summaries = repo.ratingSummaries();

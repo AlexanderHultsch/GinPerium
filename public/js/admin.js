@@ -1,6 +1,7 @@
 // Verwaltungsseite (admin.html, nur is_admin): Gin-CRUD + Nutzerliste.
 import { api } from './api.js';
 import { renderNavHtml, wireNavToggle } from './nav.js';
+import { showToast } from './toast.js';
 
 // Textfelder + numerische Felder (ohne inStock/isVisible — die werden über
 // Checkboxen separat gelesen/gesetzt).
@@ -81,7 +82,7 @@ async function toggleGinFlag(ginId, flag, checked) {
     await api.adminUpdateGin(ginId, payloadFromGin(gin, { [flag]: checked }));
     await loadGins();
   } catch (err) {
-    alert(err.message);
+    showToast(err.message, 'error');
     await loadGins(); // Checkbox-Zustand zurücksetzen, falls die Anfrage fehlschlug.
   }
 }
