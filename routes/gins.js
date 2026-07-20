@@ -1,4 +1,4 @@
-// Gin-Katalog (Vertrag §5.2): Liste öffentlich, Bewerten nur eingeloggt.
+// Gin-Katalog: Liste öffentlich (nur sichtbare Gins), Bewerten nur eingeloggt.
 import { Router } from 'express';
 import { apiError } from '../middleware/errorEnvelope.js';
 import { isValidRating, publicGin } from '../lib/domain.js';
@@ -6,10 +6,12 @@ import { isValidRating, publicGin } from '../lib/domain.js';
 export function createGinsRouter({ repo, auth, newId, now }) {
   const router = Router();
 
-  // GET / -> öffentlich. auth.attachUser setzt req.user, ohne den Zugriff zu blockieren,
-  // damit eingeloggte Nutzer:innen ihre eigene Bewertung markiert sehen.
+  // GET / -> öffentlich, aber nur is_visible-Gins (unsichtbare/gelöschte bleiben in
+  // der DB, sind aber nur über die Admin-Verwaltung sichtbar). auth.attachUser setzt
+  // req.user, ohne den Zugriff zu blockieren, damit eingeloggte Nutzer:innen ihre
+  // eigene Bewertung markiert sehen.
   router.get('/', auth.attachUser, (req, res) => {
-    const gins = repo.listGins();
+    const gins = repo.listVisibleGins();
     const summaries = repo.ratingSummaries();
     const ownRatings = req.user ? repo.userRatingsForUser(req.user.id) : {};
 

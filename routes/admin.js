@@ -15,6 +15,14 @@ export function createAdminRouter({ repo, auth, newId, now }) {
 
   // -- Gins --
 
+  // Anders als der öffentliche Katalog (routes/gins.js) liefert diese Route ALLE
+  // Gins, auch ausverkaufte/unsichtbare — sonst könnte die Admin-Oberfläche sie
+  // nicht wieder einblenden.
+  router.get('/gins', (req, res) => {
+    const summaries = repo.ratingSummaries();
+    res.json({ gins: repo.listGins().map((gin) => publicGin(gin, summaries[gin.id], null)) });
+  });
+
   router.post('/gins', (req, res) => {
     const payload = readGinPayload(req.body);
     if (repo.getGinByName(payload.name)) throw apiError('GIN_EXISTS', 'Ein Gin mit diesem Namen existiert bereits.');

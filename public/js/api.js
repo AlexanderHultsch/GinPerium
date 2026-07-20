@@ -57,6 +57,7 @@ export const api = {
   rateGin: (id, rating) => apiFetch(`/gins/${id}/rating`, { method: 'PUT', body: { rating } }),
 
   // Admin
+  adminListGins: () => apiFetch('/admin/gins'),
   adminCreateGin: (gin) => apiFetch('/admin/gins', { method: 'POST', body: gin }),
   adminUpdateGin: (id, gin) => apiFetch(`/admin/gins/${id}`, { method: 'PUT', body: gin }),
   adminDeleteGin: (id) => apiFetch(`/admin/gins/${id}`, { method: 'DELETE' }),

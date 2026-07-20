@@ -67,7 +67,8 @@ function renderFilterOptions() {
 function ginCardMarkup(gin) {
   const interactive = !!currentUser;
   return `
-    <article class="gin-card" data-name="${escapeHtml(gin.name)}">
+    <article class="gin-card${gin.inStock ? '' : ' out-of-stock'}" data-name="${escapeHtml(gin.name)}">
+      ${gin.inStock ? '' : '<span class="out-of-stock-badge">Ausverkauft</span>'}
       <div class="gin-card-photo">
         <img src="images/${escapeHtml(gin.image)}" alt="${escapeHtml(gin.name)}" loading="lazy">
       </div>

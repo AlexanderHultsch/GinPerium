@@ -269,10 +269,32 @@ button {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+.gin-card.out-of-stock {
+  opacity: 0.55;
+  filter: grayscale(55%);
+}
+.out-of-stock-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  z-index: 1;
 }
 .gin-card-photo {
   aspect-ratio: 4 / 3;
-  background: var(--surface-2);
+  /* Fest weiß statt --surface-2: die Flaschenfotos sind selbst vor weißem
+     Hintergrund fotografiert — ein themefarbenes Padding drumherum würde
+     als sichtbarer Rand/Bruch auffallen, in hell wie in dunkel. */
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -455,6 +477,20 @@ button {
 .field-group textarea {
   resize: vertical;
 }
+.checkbox-label {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem !important;
+  color: var(--text) !important;
+  cursor: pointer;
+}
+.checkbox-label input[type='checkbox'] {
+  width: auto;
+  padding: 0;
+  accent-color: var(--accent);
+}
 
 .form-message {
   min-height: 1.2em;
@@ -574,6 +610,12 @@ table.admin-table td {
 }
 table.admin-table tr:last-child td {
   border-bottom: none;
+}
+table.admin-table input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 .admin-table-actions {
   display: flex;

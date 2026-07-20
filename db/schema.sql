@@ -19,13 +19,14 @@ CREATE TABLE IF NOT EXISTS gins (
     taste         TEXT NOT NULL,
     alcohol       TEXT NOT NULL,             -- Anzeige-String, z.B. "ALC.: 42 %"
     abv           REAL NOT NULL,             -- numerisch, für Sortierung
-    cost          TEXT NOT NULL,             -- Anzeige-String, z.B. "26,90€ || 0,7l"
-    price_eur     REAL NOT NULL,             -- numerisch, für Sortierung
-    volume_l      REAL,                      -- optional, numerisch
+    price_eur     REAL NOT NULL,             -- numerisch, für Sortierung & Anzeige
+    volume_l      REAL NOT NULL,             -- numerisch, für Anzeige ("26,90 € für 0,7 l")
     category      TEXT NOT NULL,
     botanicals    TEXT NOT NULL,             -- kommagetrennt
     story         TEXT NOT NULL,
     perfect_serve TEXT NOT NULL,
+    in_stock      INTEGER NOT NULL DEFAULT 1 CHECK (in_stock IN (0, 1)),
+    is_visible    INTEGER NOT NULL DEFAULT 1 CHECK (is_visible IN (0, 1)),
     created_at    TEXT NOT NULL,
     updated_at    TEXT NOT NULL
 );

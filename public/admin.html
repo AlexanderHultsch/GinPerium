@@ -49,20 +49,32 @@
             <input type="text" id="field-abv" name="abv" inputmode="decimal" required />
           </div>
           <div class="field-group">
-            <label for="field-cost">Preis (Anzeigetext, z. B. "26,90€ || 0,7l")</label>
-            <input type="text" id="field-cost" name="cost" required />
-          </div>
-          <div class="field-group">
-            <label for="field-priceEur">Preis in € (Zahl, für Sortierung)</label>
+            <label for="field-priceEur">Preis in € (Zahl)</label>
             <input type="text" id="field-priceEur" name="priceEur" inputmode="decimal" required />
           </div>
           <div class="field-group">
-            <label for="field-volumeL">Volumen in Liter (optional)</label>
-            <input type="text" id="field-volumeL" name="volumeL" inputmode="decimal" />
+            <label for="field-volumeL">Flaschengröße in Liter (Zahl, z. B. 0.7)</label>
+            <input type="text" id="field-volumeL" name="volumeL" inputmode="decimal" required />
           </div>
+          <p class="muted field-wide" style="margin: -6px 0 4px; font-size: 0.85rem">
+            Preis und Menge werden auf der Katalogseite automatisch zu einem Text kombiniert (z. B. "26,90 € für 0,7
+            l").
+          </p>
           <div class="field-group">
             <label for="field-botanicals">Botanicals (kommagetrennt)</label>
             <input type="text" id="field-botanicals" name="botanicals" required />
+          </div>
+          <div class="field-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="field-inStock" name="inStock" checked />
+              Vorrätig
+            </label>
+          </div>
+          <div class="field-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="field-isVisible" name="isVisible" checked />
+              Im Katalog sichtbar
+            </label>
           </div>
           <div class="field-group field-wide">
             <label for="field-story">Geschichte</label>
@@ -87,6 +99,8 @@
                 <th>Preis</th>
                 <th>ABV</th>
                 <th>Bewertungen</th>
+                <th>Vorrätig</th>
+                <th>Sichtbar</th>
                 <th>Aktionen</th>
               </tr>
             </thead>

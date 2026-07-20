@@ -2,6 +2,8 @@
 import { api } from './api.js';
 import { renderNavHtml, wireNavToggle } from './nav.js';
 
+// Textfelder + numerische Felder (ohne inStock/isVisible — die werden über
+// Checkboxen separat gelesen/gesetzt).
 const GIN_FIELDS = [
   'name',
   'image',
@@ -9,7 +11,6 @@ const GIN_FIELDS = [
   'taste',
   'alcohol',
   'abv',
-  'cost',
   'priceEur',
   'volumeL',
   'category',
@@ -20,6 +21,7 @@ const GIN_FIELDS = [
 
 let editingGinId = null;
 let currentUser = null;
+let ginsById = new Map();
 
 function escapeHtml(value) {
   const div = document.createElement('div');
@@ -32,6 +34,8 @@ function readForm(form) {
   for (const field of GIN_FIELDS) {
     payload[field] = form.elements[field].value;
   }
+  payload.inStock = form.elements.inStock.checked;
+  payload.isVisible = form.elements.isVisible.checked;
   return payload;
 }
 
@@ -39,6 +43,8 @@ function fillForm(form, gin) {
   for (const field of GIN_FIELDS) {
     form.elements[field].value = gin[field] ?? '';
   }
+  form.elements.inStock.checked = gin.inStock;
+  form.elements.isVisible.checked = gin.isVisible;
 }
 
 function showMessage(text, kind) {
@@ -49,14 +55,40 @@ function showMessage(text, kind) {
 
 function resetForm() {
   editingGinId = null;
-  document.getElementById('gin-form').reset();
+  const form = document.getElementById('gin-form');
+  form.reset();
+  form.elements.inStock.checked = true;
+  form.elements.isVisible.checked = true;
   document.getElementById('gin-form-title').textContent = 'Neuen Gin anlegen';
   document.getElementById('gin-form-submit').textContent = 'Gin anlegen';
   document.getElementById('gin-form-cancel').classList.add('hidden');
 }
 
+// Baut aus dem geladenen Gin-DTO wieder ein für die API gültiges Payload —
+// genutzt für die schnellen Inline-Toggles in der Tabelle (Vorrätig/Sichtbar),
+// ohne dass man dafür das ganze Formular öffnen muss.
+function payloadFromGin(gin, overrides) {
+  const payload = {};
+  for (const field of GIN_FIELDS) payload[field] = gin[field];
+  payload.inStock = gin.inStock;
+  payload.isVisible = gin.isVisible;
+  return { ...payload, ...overrides };
+}
+
+async function toggleGinFlag(ginId, flag, checked) {
+  const gin = ginsById.get(ginId);
+  try {
+    await api.adminUpdateGin(ginId, payloadFromGin(gin, { [flag]: checked }));
+    await loadGins();
+  } catch (err) {
+    alert(err.message);
+    await loadGins(); // Checkbox-Zustand zurücksetzen, falls die Anfrage fehlschlug.
+  }
+}
+
 async function loadGins() {
-  const { gins } = await api.listGins();
+  const { gins } = await api.adminListGins();
+  ginsById = new Map(gins.map((gin) => [gin.id, gin]));
   const tbody = document.getElementById('gin-table-body');
   tbody.innerHTML =
     gins
@@ -65,20 +97,29 @@ async function loadGins() {
       <tr>
         <td>${escapeHtml(gin.name)}</td>
         <td>${escapeHtml(gin.region)}</td>
-        <td>${gin.priceEur.toFixed(2)}&nbsp;€</td>
+        <td>${escapeHtml(gin.cost)}</td>
         <td>${gin.abv}&nbsp;%</td>
         <td>${gin.ratingCount}</td>
+        <td><input type="checkbox" data-action="toggle-stock" data-id="${gin.id}" ${gin.inStock ? 'checked' : ''}></td>
+        <td><input type="checkbox" data-action="toggle-visible" data-id="${gin.id}" ${gin.isVisible ? 'checked' : ''}></td>
         <td class="admin-table-actions">
           <button type="button" class="button-secondary" data-action="edit" data-id="${gin.id}">Bearbeiten</button>
           <button type="button" class="button-danger" data-action="delete" data-id="${gin.id}">Löschen</button>
         </td>
       </tr>`,
       )
-      .join('') || '<tr><td colspan="6">Noch keine Gins vorhanden.</td></tr>';
+      .join('') || '<tr><td colspan="8">Noch keine Gins vorhanden.</td></tr>';
+
+  tbody.querySelectorAll('[data-action="toggle-stock"]').forEach((checkbox) => {
+    checkbox.addEventListener('change', () => toggleGinFlag(checkbox.dataset.id, 'inStock', checkbox.checked));
+  });
+  tbody.querySelectorAll('[data-action="toggle-visible"]').forEach((checkbox) => {
+    checkbox.addEventListener('change', () => toggleGinFlag(checkbox.dataset.id, 'isVisible', checkbox.checked));
+  });
 
   tbody.querySelectorAll('[data-action="edit"]').forEach((button) => {
     button.addEventListener('click', () => {
-      const gin = gins.find((g) => g.id === button.dataset.id);
+      const gin = ginsById.get(button.dataset.id);
       editingGinId = gin.id;
       fillForm(document.getElementById('gin-form'), gin);
       document.getElementById('gin-form-title').textContent = `Gin bearbeiten: ${gin.name}`;

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isValidRating, validateGinPayload } from '../lib/domain.js';
+import { isValidRating, validateGinPayload, formatCost } from '../lib/domain.js';
 
 test('isValidRating akzeptiert 1 bis 5', () => {
   for (const value of [1, 2, 3, 4, 5]) assert.equal(isValidRating(value), true);
@@ -10,6 +10,11 @@ test('isValidRating lehnt 0, 6, Kommazahlen und NaN ab', () => {
   for (const value of [0, 6, 3.5, NaN, -1]) assert.equal(isValidRating(value), false);
 });
 
+test('formatCost kombiniert Preis und Menge zu einem Anzeige-Text', () => {
+  assert.equal(formatCost(26.9, 0.7), '26,90 € für 0,7 l');
+  assert.equal(formatCost(5, 1), '5,00 € für 1 l');
+});
+
 const VALID_GIN = {
   name: 'Bombay Sapphire',
   image: 'gins/Bombay.jpg',
@@ -17,8 +22,8 @@ const VALID_GIN = {
   taste: 'Zitrus',
   alcohol: '40%',
   abv: 40,
-  cost: '26,90€',
   priceEur: 26.9,
+  volumeL: 0.7,
   category: 'London Dry Gin',
   botanicals: 'Wacholder, Zitrone',
   story: 'Klassiker.',
@@ -31,13 +36,23 @@ test('validateGinPayload akzeptiert ein vollständiges Payload', () => {
   assert.equal(result.gin.name, 'Bombay Sapphire');
   assert.equal(result.gin.priceEur, 26.9);
   assert.equal(result.gin.abv, 40);
-  assert.equal(result.gin.volumeL, null);
+  assert.equal(result.gin.volumeL, 0.7);
+  assert.equal(result.gin.inStock, true);
+  assert.equal(result.gin.isVisible, true);
 });
 
-test('validateGinPayload akzeptiert optionales volumeL', () => {
-  const result = validateGinPayload({ ...VALID_GIN, volumeL: 0.7 });
+test('validateGinPayload übernimmt explizite inStock/isVisible-Werte', () => {
+  const result = validateGinPayload({ ...VALID_GIN, inStock: false, isVisible: false });
   assert.equal(result.valid, true);
-  assert.equal(result.gin.volumeL, 0.7);
+  assert.equal(result.gin.inStock, false);
+  assert.equal(result.gin.isVisible, false);
+});
+
+test('validateGinPayload lehnt fehlendes/ungültiges volumeL ab', () => {
+  const { volumeL: _volumeL, ...rest } = VALID_GIN;
+  assert.equal(validateGinPayload(rest).valid, false);
+  assert.equal(validateGinPayload({ ...VALID_GIN, volumeL: 0 }).valid, false);
+  assert.equal(validateGinPayload({ ...VALID_GIN, volumeL: -1 }).valid, false);
 });
 
 test('validateGinPayload lehnt fehlende Textfelder ab', () => {

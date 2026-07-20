@@ -42,8 +42,8 @@ export function createRepository(db) {
     // --- Gins ---
     createGin(g) {
       q(
-        `INSERT INTO gins(id, name, image, region, taste, alcohol, abv, cost, price_eur, volume_l, category, botanicals, story, perfect_serve, created_at, updated_at)
-         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        `INSERT INTO gins(id, name, image, region, taste, alcohol, abv, price_eur, volume_l, category, botanicals, story, perfect_serve, in_stock, is_visible, created_at, updated_at)
+         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       ).run(
         g.id,
         g.name,
@@ -52,13 +52,14 @@ export function createRepository(db) {
         g.taste,
         g.alcohol,
         g.abv,
-        g.cost,
         g.priceEur,
-        g.volumeL ?? null,
+        g.volumeL,
         g.category,
         g.botanicals,
         g.story,
         g.perfectServe,
+        g.inStock === false ? 0 : 1,
+        g.isVisible === false ? 0 : 1,
         g.createdAt,
         g.updatedAt,
       );
@@ -68,8 +69,8 @@ export function createRepository(db) {
       q(
         `UPDATE gins SET
            name = ?, image = ?, region = ?, taste = ?, alcohol = ?, abv = ?,
-           cost = ?, price_eur = ?, volume_l = ?, category = ?, botanicals = ?,
-           story = ?, perfect_serve = ?, updated_at = ?
+           price_eur = ?, volume_l = ?, category = ?, botanicals = ?,
+           story = ?, perfect_serve = ?, in_stock = ?, is_visible = ?, updated_at = ?
          WHERE id = ?`,
       ).run(
         g.name,
@@ -78,13 +79,14 @@ export function createRepository(db) {
         g.taste,
         g.alcohol,
         g.abv,
-        g.cost,
         g.priceEur,
-        g.volumeL ?? null,
+        g.volumeL,
         g.category,
         g.botanicals,
         g.story,
         g.perfectServe,
+        g.inStock === false ? 0 : 1,
+        g.isVisible === false ? 0 : 1,
         g.updatedAt,
         id,
       );
@@ -93,8 +95,13 @@ export function createRepository(db) {
     deleteGin(id) {
       q('DELETE FROM gins WHERE id = ?').run(id);
     },
+    // Alle Gins (Admin-Verwaltung: auch nicht vorrätige/unsichtbare).
     listGins() {
       return q('SELECT * FROM gins ORDER BY name').all();
+    },
+    // Nur öffentlich sichtbare Gins (Katalog für Gäste/Nutzer:innen).
+    listVisibleGins() {
+      return q('SELECT * FROM gins WHERE is_visible = 1 ORDER BY name').all();
     },
     getGinById(id) {
       return q('SELECT * FROM gins WHERE id = ?').get(id) ?? null;
