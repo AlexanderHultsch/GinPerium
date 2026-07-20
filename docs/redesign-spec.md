@@ -135,7 +135,7 @@ db/
   repository.js         createRepository(db) — aller SQL-Zugriff gekapselt
   seedData.js           Gin-Katalog + seedGinsIfEmpty()
 scripts/
-  seedAdmin.js          ADMIN_USERNAME/PASSWORD aus .env
+  seedAdmin.js          ADMIN_USER/PASSWORD aus .env
   seedGins.js           Katalog nachträglich einspielen
 ```
 
@@ -280,7 +280,7 @@ Komponenten:
   völlig unabhängig von WineCashing oder anderen Apps auf dem Pi. Keine
   gemeinsame Datei, kein gemeinsames Volume.
 - **`.env`** (Vorlage `.env.example`): `PORT`, `DB_PATH`, `SESSION_SECRET`
-  (Pflicht!), `ADMIN_USERNAME`/`ADMIN_PASSWORD`, optional `SECURE_COOKIES`,
+  (Pflicht!), `ADMIN_USER`/`ADMIN_PASSWORD`, optional `SECURE_COOKIES`,
   `TRUST_PROXY`.
 - **`app.js`** setzt `trust proxy`, konfiguriert `express-session`
   (httpOnly, sameSite=lax, `secure` nur wenn `SECURE_COOKIES=true` —
@@ -345,3 +345,36 @@ Komponenten:
 4. **Logo als PNG** — `images/GinIcon.png`, kein Emoji.
 
 Damit ist die Spezifikation final und bereit für die Umsetzung (Etappe 1).
+
+---
+
+## 14. Verbindlicher Infrastruktur-Standard (Pi-weit, alle Projekte)
+
+GinPerium läuft als eigener Docker-Container auf einem Raspberry Pi hinter
+einem Caddy-Reverse-Proxy. Eine zentrale Installations-Automatisierung
+verwaltet dort mehrere Seiten einheitlich. Damit das funktioniert, **MUSS**
+dieses Repo dauerhaft folgendem Vertrag entsprechen — jede künftige Änderung
+an diesem Repo muss ihn einhalten, nicht nur der aktuelle Stand:
+
+1. **`Dockerfile` im Repo-Root.** Die App läuft als Container (gilt auch für
+   reine Frontends ohne Backend).
+2. **Lauscht auf `process.env.PORT`** (Default `3000`, siehe `server.js`).
+3. **Start ohne Argumente:** `node server.js` — keine CLI-Flags/Parameter
+   nötig, um den Dienst hochzufahren.
+4. **Datenbank (falls vorhanden):** SQLite-Datei unter `process.env.DB_PATH`
+   (Default `./data/<name>.db`, hier `./data/ginperium.db`); der Host
+   mountet `/data` als Docker-Volume (hier: eigenes benanntes Volume, siehe
+   §9).
+5. **Secrets ausschließlich aus Umgebungsvariablen** — niemals hartkodiert,
+   niemals committet: `SESSION_SECRET`; da GinPerium eine Admin-Funktion hat,
+   zusätzlich `ADMIN_USER` + `ADMIN_PASSWORD`.
+6. **Admin-Seed:** `npm run seed:admin` liest `ADMIN_USER`/`ADMIN_PASSWORD`
+   aus der Umgebung (siehe `scripts/seedAdmin.js`). Der Admin-Account wird
+   zentral einmal gesetzt und ist über alle Seiten auf dem Pi identisch.
+7. **`.env.example`** enthält alle Variablen als Platzhalter; die echte
+   `.env` ist über `.gitignore` ausgeschlossen — **das Repo ist öffentlich!**
+
+Dieser Standard ist zusätzlich in `CLAUDE.md` im Repo-Root verankert, damit
+er bei jeder künftigen Änderung automatisch berücksichtigt wird. Weicht der
+Code einmal davon ab, hat die Angleichung an diesen Vertrag Vorrang vor
+anderen Refactorings.

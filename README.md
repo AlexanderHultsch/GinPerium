@@ -174,7 +174,7 @@ docker compose up -d --build
   ```bash
   docker compose exec ginperium node scripts/seedAdmin.js <benutzername> <passwort>
   ```
-  (liest alternativ `ADMIN_USERNAME`/`ADMIN_PASSWORD` aus der Umgebung.
+  (liest alternativ `ADMIN_USER`/`ADMIN_PASSWORD` aus der Umgebung.
   **Achtung:** Das Skript setzt bei einem bereits existierenden Nutzer
   auch `is_admin = true` — für einen reinen Passwort-Reset eines
   gewöhnlichen Nutzers also ungeeignet, siehe „Bekannte offene Punkte".)
