@@ -25,6 +25,10 @@ COPY scripts ./scripts
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
+# Unabhängig von den Datei-Rechten auf dem Build-Host: /app muss dem
+# unprivilegierten "node"-Nutzer gehören, sonst EACCES beim Start.
+RUN chown -R node:node /app
+
 EXPOSE 3000
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "server.js"]
