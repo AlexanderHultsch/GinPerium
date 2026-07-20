@@ -27,29 +27,32 @@ Grundlage für die Umsetzung.
   Bewerten mit einem Klick.
 
 ### Abgestimmte Rahmenentscheidungen
-| Thema | Entscheidung |
-|---|---|
-| Sichtbarkeit | Katalog **öffentlich**, Login nur zum Bewerten |
-| Konten | **Offene Selbstregistrierung** |
-| Technik | Login-/DB-Logik von **WineCashing** übernehmen, Vanilla JS |
-| Look | **Botanisch & warm**, auto hell/dunkel |
-| Zusatzfunktion | **Sortierung** (keine Freitextsuche, keine Detailseiten, kein manueller Theme-Umschalter) |
-| Datenbank | **Eigene, vollständig getrennte DB** (eigenes Volume/eigene Datei, nichts mit anderen Projekten geteilt); GinPerium-DB darf zurückgesetzt werden |
-| Preis-/Alkohol | **Numerische Felder** ergänzen (für Sortierung) |
-| Login-UI | **Modal-Overlay** auf der Katalogseite |
-| Logo | **PNG** (`images/GinIcon.png`), kein Emoji |
+
+| Thema          | Entscheidung                                                                                                                                     |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Sichtbarkeit   | Katalog **öffentlich**, Login nur zum Bewerten                                                                                                   |
+| Konten         | **Offene Selbstregistrierung**                                                                                                                   |
+| Technik        | Login-/DB-Logik von **WineCashing** übernehmen, Vanilla JS                                                                                       |
+| Look           | **Botanisch & warm**, auto hell/dunkel                                                                                                           |
+| Zusatzfunktion | **Sortierung** (keine Freitextsuche, keine Detailseiten, kein manueller Theme-Umschalter)                                                        |
+| Datenbank      | **Eigene, vollständig getrennte DB** (eigenes Volume/eigene Datei, nichts mit anderen Projekten geteilt); GinPerium-DB darf zurückgesetzt werden |
+| Preis-/Alkohol | **Numerische Felder** ergänzen (für Sortierung)                                                                                                  |
+| Login-UI       | **Modal-Overlay** auf der Katalogseite                                                                                                           |
+| Logo           | **PNG** (`images/GinIcon.png`), kein Emoji                                                                                                       |
 
 ---
 
 ## 2. Überblick: was bleibt, was sich ändert
 
 **Bleibt inhaltlich:**
+
 - Node.js + Express + `node:sqlite`, ein Docker-Container mit **eigenem**
   Volume auf dem Pi
 - Der Gin-Katalog als versionierter Seed (`db/seedData.js`, 19 Gins)
 - Bewertungslogik: 1 Bewertung pro Nutzer:in und Gin (Upsert)
 
 **Ändert sich (Architektur, an WineCashing angeglichen):**
+
 - **ESM statt CommonJS** (`"type": "module"`, `import`/`export`)
 - **`app.js` wird eine Factory** `createApp({ repo, ...deps })` mit injizierten
   Abhängigkeiten → gegen `:memory:`-SQLite testbar; `server.js` verdrahtet nur.
@@ -62,6 +65,7 @@ Grundlage für die Umsetzung.
 - **ESLint (flat) + Prettier + .editorconfig** wie im Schwesterprojekt
 
 **Ändert sich (UX/Frontend, das eigentliche Redesign):**
+
 - Öffentlicher Single-Page-Katalog mit gemeinsamer Navigation
 - Login/Registrierung als **Modal-Overlay** statt eigener Seiten
 - Neues botanisches Design-System, aufgeräumte Gin-Karten
@@ -94,11 +98,11 @@ Drei schlanke HTML-Einstiegspunkte (kein Client-Router, wie bei WineCashing):
 
 ## 4. Nutzerrollen & Zugriffsmodell
 
-| Rolle | Sehen | Bewerten | Verwalten |
-|---|---|---|---|
-| **Gast** (kein Login) | ✅ Katalog + Ø-Bewertungen | ❌ | ❌ |
-| **Nutzer:in** (eingeloggt) | ✅ + eigene Bewertung markiert | ✅ (1×/Gin, änderbar) | ❌ |
-| **Admin** (`is_admin`) | ✅ | ✅ | ✅ Gins + Nutzer |
+| Rolle                      | Sehen                          | Bewerten              | Verwalten        |
+| -------------------------- | ------------------------------ | --------------------- | ---------------- |
+| **Gast** (kein Login)      | ✅ Katalog + Ø-Bewertungen     | ❌                    | ❌               |
+| **Nutzer:in** (eingeloggt) | ✅ + eigene Bewertung markiert | ✅ (1×/Gin, änderbar) | ❌               |
+| **Admin** (`is_admin`)     | ✅                             | ✅                    | ✅ Gins + Nutzer |
 
 - **Session**: httpOnly-Cookie via `express-session` (wie WineCashing).
 - **Registrierung offen**: `POST /api/auth/register` legt Konto an + Session.
@@ -109,6 +113,7 @@ Drei schlanke HTML-Einstiegspunkte (kein Client-Router, wie bei WineCashing):
 ## 5. Backend-Umbau (WineCashing-Muster übernehmen)
 
 ### 5.1 Struktur
+
 ```
 server.js              DB öffnen, Repo + App verdrahten, lauschen
 app.js                 createApp({ repo, ...deps }) — Factory, injizierbar
@@ -135,21 +140,23 @@ scripts/
 ```
 
 ### 5.2 Öffentliche vs. geschützte Endpunkte (neue API-Matrix)
-| Methode & Pfad | Zugriff | Zweck |
-|---|---|---|
-| `GET /api/gins` | **öffentlich** | Katalog inkl. Ø-Bewertung/Anzahl; `ownRating` nur wenn eingeloggt |
-| `POST /api/auth/register` | öffentlich | Konto anlegen + Session |
-| `POST /api/auth/login` | öffentlich | Login |
-| `POST /api/auth/logout` | eingeloggt | Logout |
-| `GET /api/auth/me` | eingeloggt | Session-Status fürs Nav |
-| `PUT /api/gins/:id/rating` | **eingeloggt** | eigene Bewertung setzen/ändern |
-| `POST/PUT/DELETE /api/admin/gins…` | Admin | Gin-CRUD |
-| `GET/DELETE /api/admin/users…` | Admin | Nutzerverwaltung |
+
+| Methode & Pfad                     | Zugriff        | Zweck                                                             |
+| ---------------------------------- | -------------- | ----------------------------------------------------------------- |
+| `GET /api/gins`                    | **öffentlich** | Katalog inkl. Ø-Bewertung/Anzahl; `ownRating` nur wenn eingeloggt |
+| `POST /api/auth/register`          | öffentlich     | Konto anlegen + Session                                           |
+| `POST /api/auth/login`             | öffentlich     | Login                                                             |
+| `POST /api/auth/logout`            | eingeloggt     | Logout                                                            |
+| `GET /api/auth/me`                 | eingeloggt     | Session-Status fürs Nav                                           |
+| `PUT /api/gins/:id/rating`         | **eingeloggt** | eigene Bewertung setzen/ändern                                    |
+| `POST/PUT/DELETE /api/admin/gins…` | Admin          | Gin-CRUD                                                          |
+| `GET/DELETE /api/admin/users…`     | Admin          | Nutzerverwaltung                                                  |
 
 Kernänderung ggü. heute: **`GET /api/gins` verliert die Login-Pflicht**;
 nur das Abgeben einer Bewertung bleibt geschützt.
 
-### 5.3 Datenmodell-Anpassung für Sortierung *(entschieden)*
+### 5.3 Datenmodell-Anpassung für Sortierung _(entschieden)_
+
 Sortierung nach Bewertung und Name geht direkt. Für **Preis** und
 **Alkohol** sind die heutigen Felder Freitext (`"26,90€ || 0,7l"`,
 `"ALC.: 42 %"`) und nicht numerisch sortierbar. Daher:
@@ -162,6 +169,7 @@ Sortierung nach Bewertung und Name geht direkt. Für **Preis** und
   Felder. Sortier-Optionen: **Name**, **Ø-Bewertung**, **Preis**, **Alkohol**.
 
 ### 5.4 Passwort-Format
+
 GinPerium übernimmt das WineCashing-Format `scrypt$N$r$p$saltHex$hashHex`.
 Da die GinPerium-DB ohnehin zurückgesetzt wird (§10), entsteht dabei kein
 Migrationsproblem mit Altkonten.
@@ -190,6 +198,7 @@ public/
 ```
 
 Prinzipien (von WineCashing übernommen):
+
 - **`config.js`** ist die einzige Stelle für sichtbare Texte/Marke. Das Logo
   ist ein **PNG** (`LOGO_SRC = 'images/GinIcon.png'`); die Marke wird als
   `<img class="brand-icon" src=… alt=SITE_NAME>` gerendert (kein Emoji).
@@ -197,7 +206,7 @@ Prinzipien (von WineCashing übernommen):
   eigenen Aktionen über `data-nav`-Attribute. Nutzereingaben werden vor
   `innerHTML` escaped (Self-XSS-Schutz).
 - **`api.js`** kapselt alle Endpunkte, wirft `Error` mit `{ status, code,
-  message }` aus dem Fehler-Umschlag, Timeout-behandelt.
+message }` aus dem Fehler-Umschlag, Timeout-behandelt.
 - **`filters.js`** enthält die Filter-/Sortierlogik als **reine Funktionen**
   → per `node --test` ohne Browser testbar.
 
@@ -227,12 +236,14 @@ Dunkel (prefers-color-scheme: dark):
 ```
 
 Typografie & Anmutung:
+
 - Serifenlose System-Schrift für Fließtext; optional dezente Serifen-Headline
   für Gin-Namen (botanisch-elegant).
 - Großzügiger Weißraum, weiche Ecken, sanfte Schatten, organische Trenner.
 - Botanicals als **Chips/Tags** statt Fließtext-Liste.
 
 Komponenten:
+
 - **Topbar** mit Marke (**PNG-Logo** + `SITE_NAME`) + Hamburger-Nav.
 - **Filter-/Sortierleiste**: Region/Geschmack/Botanicals als Selects,
   Sortierung als eigenes Select, „Zurücksetzen"-Link. Sticky beim Scrollen.

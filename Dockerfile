@@ -1,23 +1,30 @@
+# GinPerium — Node 24 auf Alpine. node:sqlite und node:crypto sind eingebaut ->
+# keine nativen Abhängigkeiten, sauberer Build (auch arm64 für den Pi).
 FROM node:24-alpine
 
-# su-exec zum sauberen Fallenlassen von Root-Rechten nach dem Entrypoint
+# su-exec: im Entrypoint kurz als root das Datenverzeichnis übereignen,
+# dann als unprivilegierter "node"-Nutzer weiterlaufen.
 RUN apk add --no-cache su-exec
 
 WORKDIR /app
+ENV NODE_ENV=production
+ENV DB_PATH=/data/ginperium.db
 
-COPY package*.json ./
+# Erst Manifeste (Layer-Cache), dann nur Produktionsabhängigkeiten.
+COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-COPY . .
+COPY app.js server.js ./
+COPY routes ./routes
+COPY middleware ./middleware
+COPY lib ./lib
+COPY db ./db
+COPY public ./public
+COPY scripts ./scripts
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-ENV DB_PATH=/data/ginperium.sqlite
-ENV PORT=3000
 EXPOSE 3000
-
-VOLUME ["/data"]
-
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "server.js"]

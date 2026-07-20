@@ -1,62 +1,44 @@
-'use strict';
+// Admin-Bootstrap: legt den ersten is_admin-Nutzer an bzw. befördert einen
+// bestehenden. Liest ADMIN_USERNAME / ADMIN_PASSWORD aus der Umgebung
+// (siehe .env.example). Idempotent: existiert der Nutzer bereits, wird sein
+// Passwort aktualisiert und is_admin gesetzt.
+// Aufruf:  npm run seed:admin
+import { openDatabase } from '../db/index.js';
+import { createRepository } from '../db/repository.js';
+import { hashPassword } from '../lib/password.js';
+import { newId } from '../lib/ids.js';
+import { nowIso } from '../lib/time.js';
 
-// Legt einen Admin-Nutzer an oder befördert einen bestehenden Nutzer zum Admin.
-//
-// Verwendung:
-//   node scripts/seedAdmin.js <benutzername> <passwort>
-//   ADMIN_USERNAME=... ADMIN_PASSWORD=... node scripts/seedAdmin.js
-//
-// Hinweis: Der erste jemals registrierte Nutzer wird ohnehin automatisch
-// zum Admin. Dieses Skript ist für den Fall gedacht, dass man später einen
-// weiteren Nutzer befördern oder einen Admin-Zugang zurücksetzen möchte.
+const username = process.env.ADMIN_USERNAME;
+const password = process.env.ADMIN_PASSWORD;
 
-const { openDatabase } = require('../db');
-const { createRepository } = require('../db/repository');
-const { newId } = require('../lib/ids');
-const { nowIso } = require('../lib/time');
-const { hashPassword } = require('../lib/password');
-
-const DB_PATH = process.env.DB_PATH ?? '/data/ginperium.sqlite';
-
-function readCredentials() {
-    const username = process.argv[2] ?? process.env.ADMIN_USERNAME;
-    const password = process.argv[3] ?? process.env.ADMIN_PASSWORD;
-
-    if (!username || !password) {
-        console.error('Benutzername und Passwort fehlen.');
-        console.error('Nutzung: node scripts/seedAdmin.js <benutzername> <passwort>');
-        process.exit(1);
-    }
-    if (password.length < 8) {
-        console.error('Das Passwort muss mindestens 8 Zeichen lang sein.');
-        process.exit(1);
-    }
-
-    return { username: username.trim(), password };
+if (!username || !password) {
+  console.error('Fehlt: ADMIN_USERNAME und ADMIN_PASSWORD müssen gesetzt sein (siehe .env.example).');
+  process.exit(1);
+}
+if (password.length < 8) {
+  console.error('Das Passwort muss mindestens 8 Zeichen lang sein.');
+  process.exit(1);
 }
 
-function main() {
-    const { username, password } = readCredentials();
-    const db = openDatabase(DB_PATH);
-    const repo = createRepository(db);
-
-    const existing = repo.findUserByUsername(username);
-
-    if (existing) {
-        repo.setUserAdmin(existing.id, true);
-        console.log(`Nutzer "${username}" wurde zum Admin befördert.`);
-    } else {
-        repo.createUser({
-            id: newId(),
-            username,
-            passwordHash: hashPassword(password),
-            isAdmin: true,
-            createdAt: nowIso(),
-        });
-        console.log(`Admin-Nutzer "${username}" wurde angelegt.`);
-    }
-
-    db.close();
+try {
+  const repo = createRepository(openDatabase());
+  const existing = repo.getUserByUsername(username);
+  if (existing) {
+    repo.setUserPassword(existing.id, hashPassword(password));
+    if (!existing.is_admin) repo.setUserAdmin(existing.id, true);
+    console.log(`Admin "${username}" aktualisiert.`);
+  } else {
+    repo.createUser({
+      id: newId(),
+      username,
+      password_hash: hashPassword(password),
+      is_admin: true,
+      created_at: nowIso(),
+    });
+    console.log(`Admin "${username}" angelegt.`);
+  }
+} catch (err) {
+  console.error(err.message);
+  process.exit(1);
 }
-
-main();

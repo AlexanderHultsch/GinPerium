@@ -1,9 +1,11 @@
 #!/bin/sh
+# Läuft als root, damit das gemountete Datenverzeichnis dem "node"-Nutzer
+# gehört (ein Bind-/Named-Mount gehört anfangs root -> sonst SQLITE_CANTOPEN),
+# und lässt den eigentlichen Prozess dann unprivilegiert weiterlaufen.
 set -e
 
-# Das Docker-Volume gehört beim ersten Start root; hier auf den node-User
-# umbiegen und Root-Rechte anschließend über su-exec abgeben.
-mkdir -p /data
-chown -R node:node /data
+DB_DIR="$(dirname "${DB_PATH:-/data/ginperium.db}")"
+mkdir -p "$DB_DIR"
+chown -R node:node "$DB_DIR"
 
 exec su-exec node "$@"

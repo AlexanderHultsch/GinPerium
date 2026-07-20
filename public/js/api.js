@@ -1,37 +1,65 @@
-// Client-API-Wrapper: JSON-Fetch inkl. Session-Cookie und einheitlichem Fehler-Umschlag.
-const api = {
-  async request(method, url, body) {
-    const response = await fetch(url, {
-      method,
-      credentials: 'same-origin',
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
-    });
+// Client-API-Wrapper. Sendet das Login-Cookie automatisch (credentials).
+// Fehler werfen ein Error mit { status, code, message } aus dem Fehler-Umschlag.
 
-    const isJson = response.headers.get('content-type')?.includes('application/json');
-    const data = isJson ? await response.json() : null;
+const API_BASE = '/api';
+export const REQUEST_TIMEOUT_MS = 15000;
 
-    if (!response.ok) {
-      const message = data?.error?.message ?? `Fehler (${response.status})`;
-      const error = new Error(message);
-      error.code = data?.error?.code;
-      error.status = response.status;
-      throw error;
+export async function apiFetch(path, { method = 'GET', body, timeoutMs = REQUEST_TIMEOUT_MS } = {}) {
+  const opts = { method, headers: {}, credentials: 'same-origin' };
+  if (body !== undefined) {
+    opts.headers['content-type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+
+  const aborter = new AbortController();
+  const timer = setTimeout(() => aborter.abort(), timeoutMs);
+  let res;
+  try {
+    res = await fetch(API_BASE + path, { ...opts, signal: aborter.signal });
+  } catch (err) {
+    if (err?.name === 'AbortError') {
+      const timeoutErr = new Error('Zeitüberschreitung — bitte erneut versuchen.');
+      timeoutErr.code = 'TIMEOUT';
+      throw timeoutErr;
     }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 
-    return data;
-  },
+  const text = await res.text();
+  let data = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = null;
+    }
+  }
+  if (!res.ok) {
+    const err = new Error(data?.error?.message || res.statusText || 'Fehler');
+    err.status = res.status;
+    err.code = data?.error?.code || `HTTP_${res.status}`;
+    throw err;
+  }
+  return data;
+}
 
-  get(url) {
-    return this.request('GET', url);
-  },
-  post(url, body) {
-    return this.request('POST', url, body);
-  },
-  put(url, body) {
-    return this.request('PUT', url, body);
-  },
-  delete(url) {
-    return this.request('DELETE', url);
-  },
+export const api = {
+  // Auth
+  register: (username, password) => apiFetch('/auth/register', { method: 'POST', body: { username, password } }),
+  login: (username, password) => apiFetch('/auth/login', { method: 'POST', body: { username, password } }),
+  logout: () => apiFetch('/auth/logout', { method: 'POST' }),
+  me: () => apiFetch('/auth/me'),
+
+  // Katalog — öffentlich lesbar, Bewerten nur eingeloggt
+  listGins: () => apiFetch('/gins'),
+  rateGin: (id, rating) => apiFetch(`/gins/${id}/rating`, { method: 'PUT', body: { rating } }),
+
+  // Admin
+  adminCreateGin: (gin) => apiFetch('/admin/gins', { method: 'POST', body: gin }),
+  adminUpdateGin: (id, gin) => apiFetch(`/admin/gins/${id}`, { method: 'PUT', body: gin }),
+  adminDeleteGin: (id) => apiFetch(`/admin/gins/${id}`, { method: 'DELETE' }),
+  adminListUsers: () => apiFetch('/admin/users'),
+  adminDeleteUser: (id) => apiFetch(`/admin/users/${id}`, { method: 'DELETE' }),
 };

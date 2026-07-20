@@ -1,66 +1,65 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Entdecke eine große Auswahl an Gin auf Ginperium, meiner eigenen privaten Gin-Seite.">
-  <title>Ginperium</title>
-  <link rel="icon" type="image/png" href="images/GinPerium.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="images/GinPerium.png">
-  <link rel="stylesheet" href="css/styles.css">
-</head>
-<body class="catalog-page">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Ginperium — eine private Gin-Sammlung zum Entdecken und Bewerten." />
+    <meta name="theme-color" content="#f5f2e9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#16130d" media="(prefers-color-scheme: dark)" />
+    <title>Ginperium</title>
+    <link rel="icon" type="image/png" href="images/GinIcon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="images/GinIcon.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body class="catalog-page">
+    <div id="nav-root"></div>
 
-  <div id="cookie-banner" class="cookie-banner">
-    <div class="cookie-banner-content">
-      <p>Hey, ich nutze Cookies! 🍪 <br>
-        Um dir auf meiner Website ein optimales Erlebnis zu bieten, setze ich Cookies ein.
-        Durch das Surfen auf meiner Seite stimmst du der Verwendung von Cookies gemäß unserer Cookie-Richtlinie zu.🌐✅</p>
-      <button id="accept-cookies" class="cookie-banner-button">Akzeptieren</button>
-      <button id="decline-cookies" class="cookie-banner-button">Ablehnen</button>
-    </div>
-  </div>
+    <main class="page">
+      <div class="hero">
+        <h1>Ginperium</h1>
+        <p>Entdecke die Sammlung — bewerten kannst du nach dem Anmelden.</p>
+      </div>
 
-  <div class="page-shell">
-    <div class="search-bar">
-      <h1>Ginperium</h1>
-
-      <label for="region-select">Region: </label>
-      <select id="region-select">
-        <option value="keine Präferenz">keine Präferenz</option>
-      </select>
-      <br>
-
-      <label for="taste-select">Geschmack: </label>
-      <select id="taste-select">
-        <option value="keine Präferenz">keine Präferenz</option>
-      </select>
-      <br>
-
-      <label for="botanical-select">Botanicals: </label>
-      <select id="botanical-select">
-        <option value="keine Präferenz">keine Präferenz</option>
-      </select>
-
-      <div class="button-group">
-        <button id="filter-button" type="button" class="filter-button">Filter</button>
-        <div>
-          <a id="admin-link" href="admin.html" class="nav-button hidden">Admin</a>
-          <button id="logout-button" type="button" class="logout-button">Abmelden</button>
+      <div class="toolbar">
+        <div class="field">
+          <label for="region-select">Region</label>
+          <select id="region-select"></select>
         </div>
+        <div class="field">
+          <label for="taste-select">Geschmack</label>
+          <select id="taste-select"></select>
+        </div>
+        <div class="field">
+          <label for="botanical-select">Botanicals</label>
+          <select id="botanical-select"></select>
+        </div>
+        <div class="field">
+          <label for="sort-select">Sortierung</label>
+          <select id="sort-select"></select>
+        </div>
+        <button type="button" class="toolbar-reset" id="toolbar-reset">Zurücksetzen</button>
+      </div>
+
+      <div id="gin-grid" class="gin-grid"></div>
+    </main>
+
+    <div id="cookie-banner" class="cookie-banner">
+      <div class="cookie-banner-content">
+        <p>
+          Hey, ich nutze Cookies! 🍪 Um dir ein optimales Erlebnis zu bieten, setze ich Cookies ein. Durch das Surfen
+          auf meiner Seite stimmst du der Verwendung von Cookies gemäß unserer Cookie-Richtlinie zu.
+        </p>
+        <button id="accept-cookies" class="cookie-banner-button">Akzeptieren</button>
+        <button id="decline-cookies" class="cookie-banner-button secondary">Ablehnen</button>
       </div>
     </div>
-
-    <div id="gin-grid" class="gin-grid"></div>
 
     <footer>
       <p>&copy; Alexander Hultsch</p>
       <a href="datenschutz.html">Datenschutzerklärung</a>
     </footer>
-  </div>
 
-  <script src="js/api.js"></script>
-  <script src="js/cookieBanner.js"></script>
-  <script src="js/app.js"></script>
-</body>
+    <script type="module" src="js/catalog.js"></script>
+    <script src="js/cookieBanner.js"></script>
+  </body>
 </html>

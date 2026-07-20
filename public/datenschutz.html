@@ -1,28 +1,60 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Datenschutzerklärung für Ginperium">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Datenschutzerklärung für Ginperium" />
     <title>Datenschutzerklärung | Ginperium</title>
-    <link rel="icon" type="image/png" href="images/GinPerium.png">
-    <link rel="stylesheet" href="css/styles.css">
-</head>
-<body class="catalog-page">
-<div class="page-shell">
-    <h1>Datenschutzerklärung</h1>
-    <p>
-        Ginperium ist Teil meiner privaten Webpräsenz. Die allgemeine
-        Datenschutzerklärung dazu findest du hier:
-    </p>
-    <p>
-        <a href="https://ahultsch.com/privacy.html">https://ahultsch.com/privacy.html</a>
-    </p>
+    <link rel="icon" type="image/png" href="images/GinIcon.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body class="catalog-page">
+    <div id="nav-root"></div>
+
+    <main class="page">
+      <div class="hero">
+        <h1>Datenschutzerklärung</h1>
+      </div>
+
+      <div class="info-page">
+        <p>Ginperium ist Teil meiner privaten Webpräsenz. Die allgemeine Datenschutzerklärung dazu findest du hier:</p>
+        <p>
+          <a href="https://ahultsch.com/privacy.html">https://ahultsch.com/privacy.html</a>
+        </p>
+      </div>
+    </main>
 
     <footer>
-        <p>&copy; Alexander Hultsch</p>
-        <a href="index.html">Zurück zur Hauptseite</a>
+      <p>&copy; Alexander Hultsch</p>
+      <a href="index.html">Zurück zum Katalog</a>
     </footer>
-</div>
-</body>
+
+    <script type="module">
+      import { renderNavHtml, wireNavToggle } from './js/nav.js';
+      import { api } from './js/api.js';
+
+      async function init() {
+        let user = null;
+        let isAdmin = false;
+        try {
+          const me = await api.me();
+          user = me.user.username;
+          isAdmin = me.user.isAdmin;
+        } catch {
+          /* nicht eingeloggt */
+        }
+        document.getElementById('nav-root').innerHTML = renderNavHtml({ active: 'info', user, isAdmin });
+        wireNavToggle();
+        document.querySelector('[data-nav="logout"]')?.addEventListener('click', async () => {
+          await api.logout();
+          window.location.reload();
+        });
+        document.querySelector('[data-nav="login"]')?.addEventListener('click', async () => {
+          const { openAuthModal } = await import('./js/authModal.js');
+          openAuthModal({ tab: 'login', onSuccess: () => window.location.reload() });
+        });
+      }
+      init();
+    </script>
+  </body>
 </html>

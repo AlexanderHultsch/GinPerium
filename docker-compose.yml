@@ -4,13 +4,15 @@ services:
     image: ginperium:latest
     container_name: ginperium
     restart: unless-stopped
+    env_file: .env
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
-      - PORT=3000
-      - DB_PATH=/data/ginperium.sqlite
+      - DB_PATH=/data/ginperium.db
     volumes:
+      # Eigenes, von anderen Projekten auf dem Pi vollständig getrenntes Volume.
       - ginperium_data:/data
 
 volumes:
   ginperium_data:
+    name: ginperium_data

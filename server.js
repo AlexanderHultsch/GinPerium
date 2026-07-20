@@ -1,22 +1,18 @@
-'use strict';
+// Einstiegspunkt: DB öffnen, Repository + App verdrahten, lauschen.
+import { openDatabase } from './db/index.js';
+import { createRepository } from './db/repository.js';
+import { seedGinsIfEmpty } from './db/seedData.js';
+import { createApp } from './app.js';
 
-const { openDatabase } = require('./db');
-const { createApp } = require('./app');
-const { createRepository } = require('./db/repository');
-const { seedGinsIfEmpty } = require('./db/seedData');
+const db = openDatabase();
+const repo = createRepository(db);
 
-const DB_PATH = process.env.DB_PATH ?? '/data/ginperium.sqlite';
-const PORT = Number(process.env.PORT ?? 3000);
-
-const db = openDatabase(DB_PATH);
-
-const seeded = seedGinsIfEmpty(createRepository(db));
+const seeded = seedGinsIfEmpty(repo);
 if (seeded > 0) {
-    console.log(`Katalog mit ${seeded} Gins aus db/seedData.js befüllt.`);
+  console.log(`Katalog mit ${seeded} Gins aus db/seedData.js befüllt.`);
 }
 
-const app = createApp(db);
+const app = createApp({ repo });
 
-app.listen(PORT, () => {
-    console.log(`GinPerium läuft auf Port ${PORT} (Datenbank: ${DB_PATH})`);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Ginperium läuft auf http://localhost:${PORT}`));

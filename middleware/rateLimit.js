@@ -1,31 +1,25 @@
-'use strict';
+// Einfacher In-Memory-Rate-Limiter (Fixed Window) für Login/Register.
+// Ohne externe Abhängigkeit; ausreichend für den privaten Freundeskreis.
+import { apiError } from './errorEnvelope.js';
 
-const { HttpError } = require('./errorEnvelope');
+export function createRateLimiter({ windowMs = 60_000, max = 10 } = {}) {
+  const hits = new Map(); // key -> { count, reset }
 
-/**
- * Einfacher In-Memory Rate-Limiter (Fixed-Window) pro IP.
- * Für eine Single-Instance-Deployment auf einem Raspberry Pi ausreichend.
- */
-function createRateLimit({ windowMs, max }) {
-    const hits = new Map();
-
-    return function rateLimitMiddleware(req, res, next) {
-        const key = req.ip;
-        const now = Date.now();
-        const entry = hits.get(key);
-
-        if (!entry || entry.resetAt <= now) {
-            hits.set(key, { count: 1, resetAt: now + windowMs });
-            return next();
-        }
-
-        entry.count += 1;
-        if (entry.count > max) {
-            return next(new HttpError(429, 'RATE_LIMITED', 'Zu viele Versuche. Bitte kurz warten.'));
-        }
-
-        next();
-    };
+  return function rateLimit(req, _res, next) {
+    const key = `${req.ip}:${req.baseUrl}${req.path}`;
+    const now = Date.now();
+    if (hits.size > 500) {
+      for (const [k, v] of hits) if (now > v.reset) hits.delete(k);
+    }
+    const rec = hits.get(key);
+    if (!rec || now > rec.reset) {
+      hits.set(key, { count: 1, reset: now + windowMs });
+      return next();
+    }
+    rec.count += 1;
+    if (rec.count > max) {
+      return next(apiError('RATE_LIMITED', 'Zu viele Versuche. Bitte später erneut.'));
+    }
+    return next();
+  };
 }
-
-module.exports = { createRateLimit };

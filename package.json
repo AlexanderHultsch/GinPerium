@@ -1,20 +1,30 @@
 {
   "name": "ginperium",
-  "version": "2.0.0",
-  "description": "Private Gin-Katalog- und Bewertungs-Webseite",
+  "version": "3.0.0",
+  "description": "Private Gin-Katalog- und Bewertungs-Webseite — öffentlicher Katalog, Login nur zum Bewerten.",
+  "type": "module",
   "private": true,
   "license": "UNLICENSED",
   "main": "server.js",
   "engines": {
-    "node": ">=22.5.0"
+    "node": ">=20"
   },
   "scripts": {
     "start": "node server.js",
-    "seed:admin": "node scripts/seedAdmin.js",
-    "seed:gins": "node scripts/seedGins.js",
-    "test": "node --test test/*.test.js"
+    "dev": "node --watch --env-file=.env server.js",
+    "seed:admin": "node --env-file=.env scripts/seedAdmin.js",
+    "seed:gins": "node --env-file=.env scripts/seedGins.js",
+    "test": "node --test",
+    "lint": "eslint .",
+    "format": "prettier --write ."
   },
   "dependencies": {
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "express-session": "^1.18.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0"
   }
 }

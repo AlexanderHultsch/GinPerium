@@ -1,30 +1,22 @@
-'use strict';
+// DB-Verbindung & Schema-Migration. Node-eingebautes node:sqlite (kein natives Modul).
+import { DatabaseSync } from 'node:sqlite';
+import { mkdirSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const { DatabaseSync } = require('node:sqlite');
-const fs = require('node:fs');
-const path = require('node:path');
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const SCHEMA_PATH = path.join(__dirname, 'schema.sql');
+// Eigene, von anderen Projekten vollständig getrennte Datenbankdatei.
+export const DB_PATH = process.env.DB_PATH || join(__dirname, '..', 'data', 'ginperium.db');
+const SCHEMA_SQL = () => readFileSync(join(__dirname, 'schema.sql'), 'utf8');
 
-/**
- * Öffnet (und migriert bei Bedarf) die SQLite-Datenbank unter dbPath.
- * dbPath === ':memory:' wird für Tests unterstützt.
- */
-function openDatabase(dbPath) {
-    if (dbPath !== ':memory:') {
-        fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-    }
-
-    const db = new DatabaseSync(dbPath);
-    db.exec('PRAGMA foreign_keys = ON;');
-    if (dbPath !== ':memory:') {
-        db.exec('PRAGMA journal_mode = WAL;');
-    }
-
-    const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
-    db.exec(schema);
-
-    return db;
+// Öffnet die DB, aktiviert Fremdschlüssel und spielt das Schema ein (idempotent).
+// path === ':memory:' für Tests.
+export function openDatabase(path = DB_PATH) {
+  if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
+  const db = new DatabaseSync(path);
+  db.exec('PRAGMA foreign_keys = ON;');
+  if (path !== ':memory:') db.exec('PRAGMA journal_mode = WAL;');
+  db.exec(SCHEMA_SQL());
+  return db;
 }
-
-module.exports = { openDatabase };
