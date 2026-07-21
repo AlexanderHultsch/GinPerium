@@ -60,7 +60,8 @@ export function createAdminRouter({ repo, auth, newId, now }) {
   // -- Users --
 
   router.get('/users', (req, res) => {
-    res.json({ users: repo.listUsers().map(publicAdminUser) });
+    const counts = repo.ratingCountsByUser();
+    res.json({ users: repo.listUsers().map((user) => publicAdminUser(user, counts[user.id] ?? 0)) });
   });
 
   router.delete('/users/:id', (req, res) => {

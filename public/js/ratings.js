@@ -15,9 +15,16 @@ export function starsMarkup(gin) {
   return html;
 }
 
+// Statt eines Textlabels ("deine Bewertung: 4") ein kompaktes Badge mit
+// Häkchen-Icon — die eigene Bewertung steckt schon in den gefüllten Sternen,
+// das Badge markiert nur zusätzlich "du hast hier schon bewertet".
 export function ratingMetaMarkup(gin) {
   const count = gin.ratingCount === 1 ? '1 Bewertung' : `${gin.ratingCount} Bewertungen`;
-  const own = gin.ownRating ? `<span class="rating-own">deine Bewertung: ${gin.ownRating}</span>` : '';
+  const own = gin.ownRating
+    ? `<span class="rating-own" role="img" aria-label="Deine Bewertung: ${gin.ownRating} von 5 Sternen" title="Deine Bewertung: ${gin.ownRating} von 5">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7.5 13.5 3.8 9.8l1.4-1.4 2.3 2.3 6.3-6.3 1.4 1.4z"/></svg>
+      </span>`
+    : '';
   return `<span class="rating-count">${count}</span>${own}`;
 }
 

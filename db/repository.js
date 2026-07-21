@@ -134,5 +134,14 @@ export function createRepository(db) {
       for (const row of rows) ratings[row.gin_id] = row.rating;
       return ratings;
     },
+    // Anzahl abgegebener Bewertungen je Nutzer:in — für die Admin-Nutzerliste,
+    // damit auffällig viele Bewertungen (z. B. mehrere Testkonten derselben
+    // Person) beim Aufräumen erkennbar sind.
+    ratingCountsByUser() {
+      const rows = q('SELECT user_id, COUNT(*) as count FROM ratings GROUP BY user_id').all();
+      const counts = {};
+      for (const row of rows) counts[row.user_id] = row.count;
+      return counts;
+    },
   };
 }

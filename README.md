@@ -106,6 +106,20 @@ nötig):
   Admin-Übersicht (`GET /api/admin/gins`, zeigt _alle_ Gins) erhalten und
   jederzeit wieder einblendbar.
 
+## Bewertungen
+
+Eine Bewertung ist pro Nutzer:in und Gin eindeutig (`UNIQUE(gin_id, user_id)`
+in `db/schema.sql`, per Upsert in `db/repository.js#upsertRating`) — ein
+erneutes Bewerten desselben Gins durch dieselbe Person überschreibt immer
+nur die eigene, bestehende Bewertung, unabhängig davon, wie viel Zeit seit
+der letzten Bewertung vergangen ist (kein Zeitlimit). Da die Registrierung
+offen ist (keine E-Mail-Verifizierung), kann dieselbe Person theoretisch
+mehrere Konten anlegen und einen Gin darüber mehrfach bewerten — das lässt
+sich technisch nicht zuverlässig verhindern. Die Nutzer:innen-Tabelle in
+`/admin.html` zeigt deshalb je Konto die Anzahl abgegebener Bewertungen
+(`GET /api/admin/users`), damit auffällige Konten (z. B. mehrere
+Testkonten derselben Person) erkannt und bei Bedarf gelöscht werden können.
+
 ## Preis & Menge
 
 Preis (`priceEur`) und Flaschengröße (`volumeL`) sind separate, numerische
@@ -158,6 +172,17 @@ erste registrierte Account wird automatisch zum Admin und kann unter
 `public/images/` referenziert (Pfad relativ dazu angeben, z. B.
 `gins/meinneuergin.jpg` — die Datei muss dort tatsächlich liegen, ein
 Upload über die Oberfläche gibt es bewusst nicht).
+
+**Bildzuschnitt:** Die Karte zeigt das Foto in einer festen 4:3-Box auf
+weißem Grund (`object-fit: contain`) — das Bild wird dabei nie gestaucht
+oder verzerrt, aber schlecht zugeschnittene Fotos wirken trotzdem unruhig
+(zu viel Leerraum, Flasche nicht zentriert). Für ein sauberes Ergebnis vor
+dem Hochladen/Einpflegen:
+
+- Flasche freistellen bzw. vor **weißem** Hintergrund fotografieren.
+- Bildausschnitt möglichst nah an ein **4:3-Seitenverhältnis** zuschneiden,
+  Flasche zentriert und randnah (wenig überflüssiger Weißraum drumherum).
+- Ausreichende Auflösung (mind. ~800 px Breite), Format JPG oder PNG.
 
 ## Setup mit Docker (empfohlen für den Raspberry Pi)
 
@@ -219,6 +244,36 @@ hat folgende Verbesserungen direkt umgesetzt:
 - **"Ausverkauft" → "Nicht vorrätig"**: Ginperium ist eine private
   Sammlung, kein Shop.
 
+## Feinschliff nach Live-Feedback (Juli 2026)
+
+Nach dem ersten produktiven Lauf auf dem Pi gemeldetes Feedback, direkt
+umgesetzt:
+
+- **Hintergrund sommerlicher**: warmer, hellerer Farbverlauf (`--bg-gradient`)
+  statt eines einzelnen flachen Cremetons.
+- **Hero-Text angepasst**: „Entdecke meine Auswahl an Gin" statt der
+  vorherigen, etwas generischeren Formulierung.
+- **Filterleiste nicht mehr sticky.** Sie wandert beim Scrollen nicht mehr
+  mit; stattdessen bringt ein schwebender „nach oben"-Button (erscheint ab
+  300 px Scroll-Tiefe) mit einem Klick zurück zu den Filtern.
+- **Bildzuschnitt dokumentiert** (siehe oben, „Setup lokal"): Fotos werden
+  von der Karte nie gestaucht/verzerrt (`object-fit: contain`), aber ein
+  sauberer 4:3-Zuschnitt vor weißem Hintergrund liegt in der Verantwortung
+  des Admins beim Einpflegen.
+- **Datenschutzerklärung erweitert** um Ginperium-spezifische Abschnitte
+  (Konto/Bewertungen, Session-Cookie, Löschung, Hosting) — der Verweis auf
+  die Haupt-Datenschutzerklärung bleibt zusätzlich bestehen.
+- **Bewertungen je Nutzer:in in der Admin-Übersicht sichtbar** (siehe
+  „Bewertungen" oben) — zum Erkennen/Aufräumen mehrfach angelegter Konten.
+- **"Deine Bewertung"-Text durch ein Badge ersetzt.** Statt eines
+  Textlabels neben den Sternen zeigt jetzt ein kompaktes Icon-Badge an,
+  dass eine eigene Bewertung existiert (die Bewertung selbst steckt schon
+  in den gefüllten Sternen).
+- **Perfect Serve als reiner, gut lesbarer Text.** Das kleine, schwer
+  erkennbare Icon davor ist entfallen; stattdessen ein dezentes
+  Eyebrow-Label „Perfect Serve" plus der Text in der Display-Schriftart mit
+  vollem Textkontrast statt gedämpfter `--muted`-Farbe.
+
 ## Umzug von der PHP/MySQL-Version (Ausgangslage)
 
 Diese Version ersetzt die ursprüngliche PHP/MySQL-Umsetzung vollständig:
@@ -247,8 +302,9 @@ Diese Version ersetzt die ursprüngliche PHP/MySQL-Umsetzung vollständig:
 ## Datenschutz
 
 `public/datenschutz.html` verweist auf die allgemeine Datenschutzerklärung
-der Landing-Page unter <https://ahultsch.com/privacy.html>; es gibt keine
-separate Erklärung mehr für Ginperium selbst.
+der Landing-Page unter <https://ahultsch.com/privacy.html> und ergänzt sie
+um Ginperium-spezifische Hinweise (Konto/Bewertungen, Session-Cookie,
+Löschung, Hosting).
 
 ## Bekannte offene Punkte
 

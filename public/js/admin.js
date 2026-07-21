@@ -148,6 +148,7 @@ async function loadUsers() {
     <tr>
       <td>${escapeHtml(user.username)}</td>
       <td>${user.isAdmin ? 'Ja' : 'Nein'}</td>
+      <td>${user.ratingCount}</td>
       <td>${user.id === currentUser.id ? '' : `<button type="button" class="button-danger" data-action="delete-user" data-id="${user.id}">Löschen</button>`}</td>
     </tr>`,
     )

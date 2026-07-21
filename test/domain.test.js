@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isValidRating, validateGinPayload, formatCost, GIN_FIELD_LABELS } from '../lib/domain.js';
+import { isValidRating, validateGinPayload, formatCost, GIN_FIELD_LABELS, publicAdminUser } from '../lib/domain.js';
 
 test('isValidRating akzeptiert 1 bis 5', () => {
   for (const value of [1, 2, 3, 4, 5]) assert.equal(isValidRating(value), true);
@@ -81,6 +81,12 @@ test('validateGinPayload akzeptiert deutsches Komma als Dezimaltrennzeichen', ()
   assert.equal(result.gin.priceEur, 26.9);
   assert.equal(result.gin.abv, 40.5);
   assert.equal(result.gin.volumeL, 0.7);
+});
+
+test('publicAdminUser enthält die Bewertungsanzahl (Default 0)', () => {
+  const user = { id: '1', username: 'admin', is_admin: 1, created_at: '2026-01-01' };
+  assert.equal(publicAdminUser(user).ratingCount, 0);
+  assert.equal(publicAdminUser(user, 3).ratingCount, 3);
 });
 
 test('GIN_FIELD_LABELS deckt jedes von validateGinPayload gemeldete Feld ab', () => {

@@ -222,6 +222,16 @@ test('Auth-, Gin- und Admin-Flow Ende-zu-Ende', async (t) => {
     assert.equal(res.data.error.code, 'CANNOT_DELETE_SELF');
   });
 
+  await t.test('Admin-Nutzerliste zeigt die Anzahl abgegebener Bewertungen je Nutzer:in', async () => {
+    const res = await server.request('GET', '/api/admin/users');
+    assert.equal(res.status, 200);
+    const owner = res.data.users.find((u) => u.username === 'owner');
+    const gast = res.data.users.find((u) => u.username === 'gast');
+    // owner hat den Gin zweimal bewertet (Upsert) -> genau 1 Bewertung, nicht 2.
+    assert.equal(owner.ratingCount, 1);
+    assert.equal(gast.ratingCount, 0);
+  });
+
   await t.test('Admin kann einen Gin löschen', async () => {
     const res = await server.request('DELETE', `/api/admin/gins/${ginId}`);
     assert.equal(res.status, 204);

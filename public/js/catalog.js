@@ -98,10 +98,10 @@ function ginCardMarkup(gin) {
         <button type="button" class="story-toggle" data-action="toggle-story" data-gin-id="${gin.id}">
           ${expanded ? 'weniger' : 'mehr lesen'}
         </button>
-        <p class="gin-card-serve">
-          <img src="images/ui/PerfectServe.svg" alt="">
-          ${escapeHtml(gin.perfectServe)}
-        </p>
+        <div class="gin-card-serve">
+          <span class="serve-label">Perfect Serve</span>
+          <p class="serve-text">${escapeHtml(gin.perfectServe)}</p>
+        </div>
         <div class="rating-row">
           ${starsMarkup(gin)}
           ${ratingMetaMarkup(gin)}
@@ -188,6 +188,20 @@ function wireToolbar() {
   });
 }
 
+// Die Filterleiste ist bewusst nicht mehr sticky — dieser Button ersetzt
+// sie als Weg zurück zu den Filtern, statt dass die Leiste beim Scrollen mitwandert.
+function wireBackToTop() {
+  const button = document.getElementById('back-to-top');
+  if (!button) return;
+  const toolbar = document.querySelector('.toolbar');
+  const updateVisibility = () => button.classList.toggle('visible', window.scrollY > 300);
+  window.addEventListener('scroll', updateVisibility, { passive: true });
+  updateVisibility();
+  button.addEventListener('click', () => {
+    (toolbar ?? document.body).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
 async function loadCatalog() {
   const grid = document.getElementById('gin-grid');
   grid.innerHTML = '<p class="state-banner">Lädt …</p>';
@@ -204,6 +218,7 @@ async function loadCatalog() {
 async function init() {
   renderNav();
   wireToolbar();
+  wireBackToTop();
   await loadCatalog();
 
   // Login-Status im Hintergrund ermitteln (Katalog ist bereits sichtbar, unabhängig davon).
