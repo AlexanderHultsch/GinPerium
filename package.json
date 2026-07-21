@@ -12,8 +12,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch --env-file=.env server.js",
-    "seed:admin": "node --env-file=.env scripts/seedAdmin.js",
-    "seed:gins": "node --env-file=.env scripts/seedGins.js",
+    "seed:admin": "node scripts/seedAdmin.js",
+    "seed:gins": "node scripts/seedGins.js",
     "test": "node --test",
     "lint": "eslint .",
     "format": "prettier --write ."
